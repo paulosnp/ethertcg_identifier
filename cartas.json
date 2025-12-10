@@ -1,0 +1,20 @@
+{
+    "rastejante_rubro.png": {
+        "nome": "Rastejante Rubro",
+        "tipo": "Místico - Vampiro",
+        "especial": "Se houver Sangue no seu campo,essa carta recebe +1.",
+        "efeito": "-1 com Celestiais no campo."
+    },
+    "pep_fada_da_confusão.png": {
+        "nome": "Rastejante Rubro",
+        "tipo": "Místico - Vampiro",
+        "especial": "Se houver Sangue no seu campo,essa carta recebe +1.",
+        "efeito": "-1 com Celestiais no campo."
+    },
+    "castelo_ebano.png": {
+        "nome": "Rastejante Rubro",
+        "tipo": "Místico - Vampiro",
+        "especial": "Se houver Sangue no seu campo,essa carta recebe +1.",
+        "efeito": "-1 com Celestiais no campo."
+    }
+}
