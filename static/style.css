@@ -3,8 +3,12 @@
     --primary-purple: #4a148c;
     --accent-gold: #ffd700;
     --ether-blue: #00e5ff;
-    --card-bg: rgba(20, 10, 30, 0.85); /* Fundo translúcido */
+    --card-bg: rgba(20, 10, 30, 0.95);
     --text-main: #f5f5f5;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
@@ -12,17 +16,15 @@ body {
     color: var(--text-main);
     font-family: 'Montserrat', sans-serif;
     margin: 0;
-    
-    /* LAYOUT LADO A LADO */
     display: flex;
     flex-direction: row; 
     height: 100vh;
-    overflow: hidden; /* Sem barra de rolagem na página inteira */
+    overflow: hidden;
 }
 
 /* --- COLUNA ESQUERDA (SIDEBAR) --- */
 .sidebar {
-    width: 350px; /* Largura fixa */
+    width: 350px;
     min-width: 350px;
     background: rgba(0, 0, 0, 0.6);
     border-right: 1px solid #333;
@@ -34,16 +36,24 @@ body {
     
     box-shadow: 5px 0 20px rgba(0,0,0,0.6);
     z-index: 10;
-    backdrop-filter: blur(10px); /* Efeito de vidro fosco */
+    backdrop-filter: blur(10px);
+    
+    overflow-y: auto; 
 }
 
+/* Scrollbar */
+.sidebar::-webkit-scrollbar { width: 5px; }
+.sidebar::-webkit-scrollbar-track { background: #000; }
+.sidebar::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
 .logo-area {
-    margin-bottom: 30px;
+    width: 100%;
     text-align: center;
+    margin-bottom: 20px;
 }
 
 .logo-area h1 {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     margin: 0;
     color: var(--accent-gold);
     text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
@@ -54,22 +64,66 @@ body {
     margin: 0;
     color: var(--ether-blue);
     letter-spacing: 8px;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     text-shadow: 0 0 5px var(--ether-blue);
 }
 
-/* --- HUD: Caixa de Resultado (Com suporte 3D) --- */
-/* --- HUD: Caixa de Resultado --- */
+/* --- LOGIN DA SALA (VERTICAL) --- */
+#login-panel {
+    width: 100%;
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column; /* Empilha verticalmente */
+    gap: 10px; /* Espaço entre Input e Botão */
+    transition: opacity 0.5s ease;
+}
+
+#room-input {
+    width: 100%;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #444;
+    color: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    text-align: center;
+    outline: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+#room-input:focus { 
+    border-color: var(--ether-blue); 
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+}
+
+#btn-connect {
+    width: 100%; /* Botão ocupa toda largura */
+    background: var(--ether-blue);
+    color: #000;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+#btn-connect:hover {
+    background: #fff;
+    box-shadow: 0 0 15px var(--ether-blue);
+    transform: translateY(-2px);
+}
+
+/* --- HUD: CAIXA DE RESULTADO --- */
 #result-box {
     position: relative;
     width: 100%;
-    max-width: 280px;
-    
-    /* CORREÇÃO DO CORTE DE TEXTO: */
-    height: auto;          /* Deixa a altura livre para crescer */
-    min-height: 420px;     /* Altura mínima para ficar bonito quando vazio */
-    padding-bottom: 30px;  /* Espaço extra no rodapé */
+    min-height: 350px; 
+    height: auto;
     
     background: var(--card-bg);
     border: 2px solid var(--accent-gold);
@@ -78,21 +132,18 @@ body {
     
     display: flex;
     flex-direction: column;
-    align-items: center;   /* Centraliza horizontalmente */
-    justify-content: flex-start;
+    align-items: center;
     padding: 20px;
-    box-sizing: border-box;
     
     perspective: 1000px;
     transform-style: preserve-3d;
-    overflow: visible;     /* Permite que a carta 3D saia um pouco se precisar */
+    overflow: visible;
 }
 
-/* Imagem da Carta */
 #result-img {
     width: 100%;
     height: auto;
-    max-height: 240px; /* Reduzi levemente para dar destaque ao texto */
+    max-height: 220px;
     object-fit: contain;
     border-radius: 10px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.6);
@@ -105,12 +156,9 @@ body {
     z-index: 10;
 }
 
-/* --- TEXTOS DA CARTA --- */
-
-/* Nome (Dourado) */
 #result-text {
     margin-top: 15px;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 800;
     text-align: center;
     width: 100%;
@@ -123,145 +171,59 @@ body {
 /* Painel de Detalhes */
 #card-details {
     width: 100%;
-    margin-top: 15px;
-    text-align: center; /* Centraliza os textos dentro dele */
+    margin-top: 10px;
+    text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px; /* Espaço entre Tipo, Especial e Efeito */
+    gap: 10px;
 }
 
-/* Tipo (Azul Neon) */
 #card-type {
     color: var(--ether-blue);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    padding-bottom: 5px;
+    padding-bottom: 3px;
     display: inline-block;
 }
 
-/* Blocos de Texto (Especial e Efeito) */
 .detail-block {
     width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Garante que o label e o texto fiquem no meio */
+    align-items: center;
 }
-
 .detail-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: bold;
     text-transform: uppercase;
-    margin-bottom: 4px;
-    letter-spacing: 1px;
+    margin-bottom: 2px;
+    color: #888;
 }
-
 .detail-text {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #eee;
     margin: 0;
-    line-height: 1.4;
+    line-height: 1.3;
     max-width: 100%;
 }
 
-.status-panel {
-    margin-top: auto; /* Empurra para o rodapé */
-    font-size: 0.8rem;
-    color: #888;
-    border-top: 1px solid #333;
-    width: 100%;
-    text-align: center;
-    padding-top: 15px;
-}
-
-/* --- COLUNA DIREITA (CÂMERA) --- */
-.main-content {
-    flex-grow: 1; /* Ocupa todo o resto */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: rgba(0,0,0,0.3);
-}
-
-h2 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.2rem;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-}
-
-#container {
-    position: relative;
-    width: 100%;
-    max-width: 1200px;
-    aspect-ratio: 16/9; /* Widescreen */
-    
-    border: 1px solid #444;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 0 60px rgba(74, 20, 140, 0.2);
-    background-color: #000;
-}
-
-video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-/* Spinner (Carregando) */
-.spinner {
-    border: 4px solid rgba(255, 255, 255, 0.1);
-    border-top: 4px solid var(--ether-blue);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    display: none;
-    box-shadow: 0 0 15px var(--ether-blue);
-}
-
-@keyframes spin { 
-    0% { transform: rotate(0deg); } 
-    100% { transform: rotate(360deg); } 
-}
-
-/* Texto flutuante sobre o vídeo */
-.instrucao {
-    position: absolute;
-    bottom: 30px;
-    width: 100%;
-    text-align: center;
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.6);
-    text-shadow: 2px 2px 4px #000;
-    pointer-events: none;
-    animation: pulse 3s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 0.5; }
-    50% { opacity: 1; }
-    100% { opacity: 0.5; }
-}
-
-/* --- PAINEL DE HISTÓRICO --- */
+/* --- HISTÓRICO --- */
 .history-panel {
     width: 100%;
-    margin-top: 20px;
-    flex-grow: 1; /* Ocupa todo o espaço sobrando na barra */
+    min-height: 200px;
+    flex-shrink: 0; 
+    flex-grow: 1;   
+    
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Para a rolagem funcionar dentro dele */
+    overflow: hidden;
     border-top: 1px solid #333;
-    padding-top: 10px;
+    padding-top: 15px;
+    margin-top: 20px;
 }
 
 .history-panel h3 {
@@ -270,21 +232,18 @@ video {
     margin: 0 0 10px 5px;
     letter-spacing: 2px;
     text-transform: uppercase;
+    text-align: left;
 }
 
 #history-list {
     flex-grow: 1;
-    overflow-y: auto; /* Barra de rolagem vertical */
-    padding-right: 5px; /* Espaço para a barra não colar */
+    overflow-y: auto;
+    padding-right: 5px;
 }
-
-/* Estilo da Barra de Rolagem (Webkit) */
 #history-list::-webkit-scrollbar { width: 6px; }
 #history-list::-webkit-scrollbar-track { background: #111; }
 #history-list::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-#history-list::-webkit-scrollbar-thumb:hover { background: var(--ether-blue); }
 
-/* --- ITEM INDIVIDUAL DO HISTÓRICO --- */
 .history-item {
     display: flex;
     align-items: center;
@@ -292,31 +251,146 @@ video {
     margin-bottom: 8px;
     padding: 5px;
     border-radius: 6px;
-    border: 1px solid transparent;
     cursor: pointer;
     transition: all 0.2s ease;
+    border: 1px solid transparent;
 }
-
 .history-item:hover {
     background: rgba(74, 20, 140, 0.4);
     border-color: var(--ether-blue);
-    transform: translateX(5px); /* Move um pouco para direita */
 }
-
 .history-item img {
-    width: 40px;
-    height: 56px; /* Proporção de carta */
+    width: 36px;
+    height: 50px;
     object-fit: cover;
     border-radius: 4px;
     margin-right: 10px;
     border: 1px solid #444;
 }
-
 .history-item span {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #ddd;
     font-weight: bold;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Reticências se o nome for longo */
+    text-overflow: ellipsis;
+    width: 100%;
+    text-align: left;
 }
+
+/* --- ÁREA PRINCIPAL E VÍDEOS --- */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0,0,0,0.3);
+}
+
+#container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    aspect-ratio: 16/9;
+    background-color: #000;
+    border: 1px solid #444;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(74, 20, 140, 0.2);
+}
+
+.video-wrapper {
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    background: #000;
+    overflow: hidden;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-full {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+}
+
+.video-pip {
+    position: absolute;
+    bottom: 20px; right: 20px;
+    width: 220px;
+    height: 124px;
+    z-index: 10;
+    border: 2px solid var(--accent-gold);
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+    cursor: pointer;
+}
+.video-pip:hover {
+    transform: scale(1.05);
+    border-color: var(--ether-blue);
+}
+
+.video-label {
+    position: absolute;
+    top: 5px; left: 5px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* --- STATUS FLUTUANTE (OVERLAY) --- */
+#status-overlay {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 10, 20, 0.95);
+    border: 1px solid var(--ether-blue);
+    padding: 8px 15px;
+    border-radius: 30px;
+    z-index: 9999;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+    
+    display: none;
+    align-items: center;
+    gap: 8px;
+    
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--ether-blue);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    pointer-events: none;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #00ff00;
+    border-radius: 50%;
+    box-shadow: 0 0 5px #00ff00;
+    animation: blink 2s infinite;
+}
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+/* Spinner */
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top: 4px solid var(--ether-blue);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    animation: spin 1s linear infinite;
+    display: none;
+    box-shadow: 0 0 15px var(--ether-blue);
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
