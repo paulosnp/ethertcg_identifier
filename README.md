@@ -4,7 +4,7 @@ Um sistema de identificação de cartas para TCGs (Trading Card Games) em tempo 
 
 O projeto utiliza **Visão Computacional** (OpenCV) e algoritmos de **Feature Matching (ORB)** para identificar cartas jogadas na mesa, mesmo a uma certa distância, e exibir a versão digital em alta resolução na tela (Picture-in-Picture).
 
-![Screenshot do Projeto](screenshot.png)
+![Screenshot do Projeto](screenshot.gif)
 *(Se você tiver um print do projeto, salve como screenshot.png na raiz e ele aparecerá aqui)*
 
 ## 🚀 Funcionalidades
