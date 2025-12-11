@@ -1,13 +1,15 @@
-import eventlet
-eventlet.monkey_patch()
 import cv2
 import numpy as np
 import os
 import base64
 import json
-from datetime import datetime # <--- NOVO
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, join_room, emit
+import eventlet
+
+# --- CORREÇÃO DE CONFLITO EVENTLET ---
+eventlet.monkey_patch()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'segredo_ether_tcg_master'
@@ -64,6 +66,65 @@ if len(descritores_db) > 0:
     flann.add(descritores_db)
     flann.train()
 
+# --- FUNÇÃO NOVA: RECORTE INTELIGENTE (AUTO-CROP) ---
+# --- FUNÇÃO NOVA: RECORTE COM MIRA CENTRAL ---
+def recorte_inteligente(img):
+    try:
+        h_img, w_img = img.shape[:2]
+        centro_x, centro_y = w_img // 2, h_img // 2 # O ponto exato onde você clicou
+
+        # 1. Pré-processamento
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        edges = cv2.Canny(blur, 30, 150) # Ajustei sensibilidade
+        
+        # 2. Dilatação para fechar buracos nas bordas da carta (ajuda se o sleeve brilhar)
+        kernel = np.ones((3,3), np.uint8)
+        edges = cv2.dilate(edges, kernel, iterations=1)
+
+        # 3. Acha contornos
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if not contours:
+            return img
+
+        melhor_candidato = None
+        maior_area = 0
+
+        for c in contours:
+            area = cv2.contourArea(c)
+            # Ignora ruídos muito pequenos
+            if area < (h_img * w_img * 0.05): continue
+
+            # --- A LÓGICA DA PRECISÃO ---
+            # Verifica se o ponto central da imagem (seu clique) está DENTRO deste contorno
+            # A função pointPolygonTest retorna > 0 se estiver dentro
+            if cv2.pointPolygonTest(c, (centro_x, centro_y), False) >= 0:
+                if area > maior_area:
+                    maior_area = area
+                    melhor_candidato = c
+        
+        # Se nenhum contorno contiver o centro (ex: borda muito falhada),
+        # pegamos o contorno mais próximo do centro ou o maior geral (fallback)
+        if melhor_candidato is None:
+             melhor_candidato = max(contours, key=cv2.contourArea)
+
+        # 4. Recorte final
+        x, y, w, h = cv2.boundingRect(melhor_candidato)
+        
+        # Padding (Margem de segurança)
+        pad = 15
+        x = max(0, x - pad)
+        y = max(0, y - pad)
+        w = min(w_img - x, w + 2*pad)
+        h = min(h_img - y, h + 2*pad)
+        
+        print(f"Auto-Crop: Carta detectada no centro. Área: {w}x{h}")
+        return img[y:y+h, x:x+w]
+        
+    except Exception as e:
+        print("Erro no Auto-Crop:", e)
+        return img
 # --- SOCKETS ---
 @socketio.on('entrar_sala')
 def handle_join(data):
@@ -90,26 +151,17 @@ def handle_scan_res(data):
 def handle_chat(data):
     emit('receber_chat', data, room=data['sala'])
 
-# --- NOVO: SINCRONIZAÇÃO DE VIDA ---
 @socketio.on('atualizar_vida')
 def handle_life(data):
-    # data = {sala, alvo ('me'/'op'), valor, delta}
-    
-    # 1. Avisa o oponente para atualizar o número na tela dele
     emit('receber_vida', data, room=data['sala'], include_self=False)
-    
-    # 2. Gera o log para o chat (com hora do servidor)
     hora_atual = datetime.now().strftime("%H:%M")
-    
-    # Identifica quem fez a ação para gerar o texto correto
     log_data = {
-        'remetente': request.sid, # ID de quem clicou
-        'alvo_clicado': data['alvo'], # 'me' ou 'op' (na visão de quem clicou)
-        'delta': data['delta'], # +1 ou -1
+        'remetente': request.sid,
+        'alvo_clicado': data['alvo'],
+        'delta': data['delta'],
         'valor_final': data['valor'],
         'hora': hora_atual
     }
-    
     emit('log_vida', log_data, room=data['sala'])
 
 # --- ROTAS HTTP ---
@@ -124,7 +176,12 @@ def identificar():
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         if frame is None: return jsonify({'sucesso': False})
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # --- AQUI ESTÁ A MÁGICA ---
+        # Tenta focar na carta automaticamente antes de processar
+        frame_recortado = recorte_inteligente(frame)
+        # --------------------------
+
+        gray = cv2.cvtColor(frame_recortado, cv2.COLOR_BGR2GRAY)
         kp_frame, des_frame = orb.detectAndCompute(clahe.apply(gray), None)
 
         if des_frame is None or len(des_frame) < 5: return jsonify({'sucesso': False})
@@ -146,6 +203,8 @@ def identificar():
 
         good = bons_matches[vencedor]
         if len(good) > 5:
+            # Atenção: Homografia aqui é opcional/arriscada no auto-crop, 
+            # mas mantivemos a validação de inliers para garantir que não é falso positivo.
             src_pts = np.float32([dados_para_homografia[vencedor][m.trainIdx].pt for m in good]).reshape(-1,1,2)
             dst_pts = np.float32([kp_frame[m.queryIdx].pt for m in good]).reshape(-1,1,2)
             M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 6.0)
@@ -156,7 +215,9 @@ def identificar():
                 return jsonify({'sucesso': True, 'imagem': imagens_b64[vencedor], 'dados': info})
                 
         return jsonify({'sucesso': False})
-    except: return jsonify({'sucesso': False})
+    except Exception as e:
+        print("Erro geral:", e)
+        return jsonify({'sucesso': False})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
