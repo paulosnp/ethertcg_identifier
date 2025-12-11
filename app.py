@@ -3,6 +3,7 @@ import numpy as np
 import os
 import base64
 import json
+from datetime import datetime # <--- NOVO
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, join_room, emit
 import eventlet
@@ -23,7 +24,6 @@ if os.path.exists(ARQUIVO_DADOS):
     try:
         with open(ARQUIVO_DADOS, 'r', encoding='utf-8') as f:
             METADADOS = json.load(f)
-        print(f"Banco carregado: {len(METADADOS)} cartas.")
     except: pass
 
 def ler_imagem_com_acentos(caminho):
@@ -33,21 +33,16 @@ def ler_imagem_com_acentos(caminho):
         return img
     except: return None
 
-# --- INDEXAÇÃO (Igual ao anterior) ---
-print("--- INICIANDO ETHER TCG ---")
+# --- INDEXAÇÃO ---
 if not os.path.exists(PASTA_BANCO): os.makedirs(PASTA_BANCO)
-
 orb = cv2.ORB_create(nfeatures=3000)
 clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-
 nomes_cartas = []
 imagens_b64 = []
 descritores_db = []
 dados_para_homografia = []
 
 arquivos = os.listdir(PASTA_BANCO)
-count = 0
-
 for arquivo in arquivos:
     caminho = os.path.join(PASTA_BANCO, arquivo)
     img = ler_imagem_com_acentos(caminho)
@@ -60,8 +55,6 @@ for arquivo in arquivos:
         imagens_b64.append(base64.b64encode(buffer).decode('utf-8'))
         dados_para_homografia.append(kp)
         descritores_db.append(des)
-        count += 1
-print(f"{count} Cartas Indexadas.")
 
 index_params = dict(algorithm=6, table_number=6, key_size=12, multi_probe_level=1)
 search_params = dict(checks=70)
@@ -92,11 +85,31 @@ def handle_scan_req(data):
 def handle_scan_res(data):
     emit('receber_imagem_remota', data, room=data['destinatario'])
 
-# --- NOVO: CHAT DE TEXTO ---
 @socketio.on('enviar_chat')
 def handle_chat(data):
-    # Reenvia a mensagem para TODOS na sala (incluindo quem mandou, para confirmar)
     emit('receber_chat', data, room=data['sala'])
+
+# --- NOVO: SINCRONIZAÇÃO DE VIDA ---
+@socketio.on('atualizar_vida')
+def handle_life(data):
+    # data = {sala, alvo ('me'/'op'), valor, delta}
+    
+    # 1. Avisa o oponente para atualizar o número na tela dele
+    emit('receber_vida', data, room=data['sala'], include_self=False)
+    
+    # 2. Gera o log para o chat (com hora do servidor)
+    hora_atual = datetime.now().strftime("%H:%M")
+    
+    # Identifica quem fez a ação para gerar o texto correto
+    log_data = {
+        'remetente': request.sid, # ID de quem clicou
+        'alvo_clicado': data['alvo'], # 'me' ou 'op' (na visão de quem clicou)
+        'delta': data['delta'], # +1 ou -1
+        'valor_final': data['valor'],
+        'hora': hora_atual
+    }
+    
+    emit('log_vida', log_data, room=data['sala'])
 
 # --- ROTAS HTTP ---
 @app.route('/')

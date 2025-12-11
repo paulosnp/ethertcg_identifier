@@ -33,6 +33,10 @@ const chatMessages = document.getElementById('chat-messages');
 // BOTÕES DE CONTROLE
 const btnMute = document.getElementById('btnMute');
 
+// CONTADORES DE VIDA
+const hpOpDisplay = document.getElementById('hp-op');
+const hpMeDisplay = document.getElementById('hp-me');
+
 // ======================================================
 // 2. CONFIGURAÇÕES GLOBAIS
 // ======================================================
@@ -45,6 +49,10 @@ let salaAtual = "";
 let isLocalMain = true;
 let isLocalRotated = false;
 let isRemoteRotated = false;
+
+// Estado dos contadores (Local)
+let hpOp = 20;
+let hpMe = 20;
 
 // ======================================================
 // 3. UI: BOTÕES DE MENU E CHAT
@@ -77,16 +85,11 @@ function toggleRotation(event, target) {
     }
 }
 
-// NOVO: CONTROLE DE ÁUDIO (MUTAR)
 function toggleMute(event) {
     event.stopPropagation();
-    // Pega a faixa de áudio do stream local
     const audioTrack = video.srcObject.getAudioTracks()[0];
-    
     if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled; // Inverte (True/False)
-        
-        // Atualiza visual do botão
+        audioTrack.enabled = !audioTrack.enabled; 
         if (audioTrack.enabled) {
             btnMute.innerHTML = "🎤";
             btnMute.classList.remove('muted');
@@ -98,7 +101,50 @@ function toggleMute(event) {
 }
 
 // ======================================================
-// 4. CHAT
+// 4. LÓGICA DE CONTADORES DE VIDA (CONECTADO)
+// ======================================================
+function changeLife(target, amount) {
+    // 1. Atualiza localmente para ser instantâneo
+    if (target === 'op') {
+        hpOp += amount;
+        if (hpOp < 0) hpOp = 0; if (hpOp > 40) hpOp = 40;
+        hpOpDisplay.innerText = hpOp;
+    } else if (target === 'me') {
+        hpMe += amount;
+        if (hpMe < 0) hpMe = 0; if (hpMe > 40) hpMe = 40;
+        hpMeDisplay.innerText = hpMe;
+    }
+
+    // 2. Envia para o servidor para avisar o oponente e gerar log
+    if (salaAtual !== "") {
+        socket.emit('atualizar_vida', {
+            sala: salaAtual,
+            alvo: target, // 'me' ou 'op' (na visão de quem clicou)
+            valor: (target === 'me' ? hpMe : hpOp), // Novo valor
+            delta: amount // +1 ou -1
+        });
+    }
+}
+
+// Recebe atualização do Oponente
+socket.on('receber_vida', (data) => {
+    // data.alvo = Quem o oponente alterou.
+    // Se o oponente alterou 'me' (ele mesmo), para mim é 'op'.
+    // Se o oponente alterou 'op' (o oponente dele, ou seja, eu), para mim é 'me'.
+    
+    if (data.alvo === 'me') {
+        // Ele mexeu na vida DELE -> Atualizo meu display do OPONENTE
+        hpOp = data.valor;
+        hpOpDisplay.innerText = hpOp;
+    } else if (data.alvo === 'op') {
+        // Ele mexeu na vida DO OPONENTE DELE (Eu) -> Atualizo meu display MEU
+        hpMe = data.valor;
+        hpMeDisplay.innerText = hpMe;
+    }
+});
+
+// ======================================================
+// 5. CHAT E LOGS
 // ======================================================
 function handleChatKey(e) { if (e.key === 'Enter') enviarMensagem(); }
 
@@ -124,8 +170,42 @@ socket.on('receber_chat', (data) => {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 });
 
+// Recebe Log de Vida
+socket.on('log_vida', (data) => {
+    // Monta o texto do log
+    // Ex: [14:05] VOCÊ: -1 Vida (19)
+    const div = document.createElement('div');
+    div.classList.add('msg-log');
+    
+    let ator = "";
+    let acao = "";
+    
+    // Determina quem fez a ação
+    if (data.remetente === socket.id) {
+        ator = "VOCÊ";
+    } else {
+        ator = "OPONENTE";
+    }
+
+    // Determina qual vida foi mexida
+    // Se eu mexi em 'me', mexi na minha. Se eu mexi em 'op', mexi na dele.
+    let alvoTexto = "";
+    if (data.alvo_clicado === 'me') {
+        alvoTexto = (data.remetente === socket.id) ? "própria vida" : "vida dele";
+    } else {
+        alvoTexto = (data.remetente === socket.id) ? "vida do oponente" : "sua vida";
+    }
+
+    const sinal = data.delta > 0 ? "+" : "";
+    
+    div.innerText = `[${data.hora}] ${ator} alterou ${alvoTexto}: ${sinal}${data.delta} (Total: ${data.valor_final})`;
+    
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+
 // ======================================================
-// 5. CONEXÃO E SALAS
+// 6. CONEXÃO E SALAS
 // ======================================================
 function conectarSala() {
     if (!roomInput || roomInput.value.trim() === "") {
@@ -155,7 +235,7 @@ socket.on('status_sala', (data) => {
 });
 
 // ======================================================
-// 6. VÍDEO P2P (AGORA COM ÁUDIO)
+// 7. VÍDEO P2P
 // ======================================================
 function iniciarVideoCall() {
     peer = new Peer(undefined, { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
@@ -165,7 +245,6 @@ function iniciarVideoCall() {
         if (salaAtual !== "") socket.emit('aviso_peer_id', { sala: salaAtual, peerId: myPeerId });
     });
 
-    // Quando recebo ligação (Respondo com meu vídeo E áudio)
     peer.on('call', (call) => {
         call.answer(video.srcObject);
         call.on('stream', (st) => mostrarVideoOponente(st));
@@ -175,7 +254,6 @@ function iniciarVideoCall() {
 socket.on('novo_peer_na_sala', (data) => {
     if (data.peerId && data.peerId !== myPeerId) {
         setTimeout(() => {
-            // Ligo para o novo peer enviando meu stream
             const call = peer.call(data.peerId, video.srcObject);
             call.on('stream', (st) => mostrarVideoOponente(st));
         }, 1000);
@@ -185,7 +263,6 @@ socket.on('novo_peer_na_sala', (data) => {
 function mostrarVideoOponente(stream) {
     if (remoteVideo) {
         remoteVideo.srcObject = stream;
-        // IMPORTANTE: Garantir que o áudio do oponente toque
         remoteVideo.muted = false; 
         isLocalMain = false; 
         atualizarLayout();
@@ -193,7 +270,7 @@ function mostrarVideoOponente(stream) {
 }
 
 // ======================================================
-// 7. LAYOUT E INTERAÇÃO
+// 8. LAYOUT E INTERAÇÃO
 // ======================================================
 function atualizarLayout() {
     if (localWrapper) localWrapper.classList.remove('video-full', 'video-pip');
@@ -233,7 +310,7 @@ if (remoteWrapper) {
 }
 
 // ======================================================
-// 8. LÓGICA DE SCAN
+// 9. LÓGICA DE SCAN
 // ======================================================
 function realizarScanLocal(cx, cy) {
     uiCarregando();
@@ -265,7 +342,7 @@ socket.on('receber_imagem_remota', (d) => enviarParaPython(d.imagem, true));
 socket.on('oponente_jogou', (d) => addToHistory(`[RIVAL] ${d.nome}`, d.imagem));
 
 // ======================================================
-// 9. AUXILIARES
+// 10. AUXILIARES
 // ======================================================
 function processarCrop(vid, rx, ry, sx, sy, spy) {
     let x = (rx*sx) - CROP_W/2, y = (ry*sy) - CROP_H/2;
@@ -304,7 +381,6 @@ function addToHistory(n, b64) {
 
 async function start() {
     try {
-        // ATENÇÃO: AUDIO AGORA É TRUE
         const s = await navigator.mediaDevices.getUserMedia({
             video:{facingMode:"environment",width:{ideal:1920},height:{ideal:1080}},
             audio: true

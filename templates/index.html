@@ -52,20 +52,42 @@
     </aside>
 
     <main class="main-content">
-        <div class="logo-area header-logo">
-            <h1>ETHER</h1>
-            <p>SCANNER</p>
-        </div>
+        
+        <header class="top-bar">
+            
+            <div class="life-counter">
+                <span class="hp-label op-label">OPONENTE</span>
+                <div class="hp-controls">
+                    <button onclick="changeLife('op', -1)">-</button>
+                    <span id="hp-op" class="hp-value">20</span>
+                    <button onclick="changeLife('op', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="logo-area">
+                <h1>ETHER</h1>
+                <p>SCANNER</p>
+            </div>
+
+            <div class="life-counter">
+                <span class="hp-label me-label">VOCÊ</span>
+                <div class="hp-controls">
+                    <button onclick="changeLife('me', -1)">-</button>
+                    <span id="hp-me" class="hp-value">20</span>
+                    <button onclick="changeLife('me', 1)">+</button>
+                </div>
+            </div>
+
+        </header>
+
         <div id="container">
             
+            <button id="btnMute" class="btn-rotate" onclick="toggleMute(event)" title="Mutar/Desmutar">🎤</button>
+
             <div class="video-wrapper local video-full">
                 <video id="videoInput" autoplay playsinline muted></video>
                 <div class="video-label">VOCÊ</div>
-                
                 <button class="btn-rotate" onclick="toggleRotation(event, 'local')" title="Girar 180°">↻</button>
-                
-                <button id="btnMute" class="btn-rotate" onclick="toggleMute(event)" title="Mutar/Desmutar">🎤</button>
-
                 <canvas id="canvasHidden" style="display:none;"></canvas>
             </div>
 

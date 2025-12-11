@@ -109,10 +109,24 @@ body {
     display: flex; flex-direction: column; gap: 10px;
 }
 
+/* ESTILOS DE MENSAGEM */
 .message-bubble { padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; max-width: 85%; word-wrap: break-word; }
 .msg-me { align-self: flex-end; background: rgba(0, 229, 255, 0.2); border: 1px solid var(--ether-blue); color: #fff; border-radius: 12px 12px 0 12px; }
 .msg-op { align-self: flex-start; background: rgba(255, 215, 0, 0.1); border: 1px solid #444; color: #ddd; border-radius: 12px 12px 12px 0; }
 .msg-sys { align-self: center; font-size: 0.7rem; color: #666; font-style: italic; margin: 5px 0; }
+
+/* NOVO: LOG DE VIDA */
+.msg-log {
+    align-self: center;
+    font-size: 0.75rem;
+    color: var(--accent-gold);
+    background: rgba(0,0,0,0.3);
+    border: 1px dashed #444;
+    padding: 4px 10px;
+    border-radius: 15px;
+    margin: 5px 0;
+    font-family: monospace;
+}
 
 .chat-input-area { padding: 10px; border-top: 1px solid #333; display: flex; gap: 5px; }
 #msgInput { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: rgba(0,0,0,0.5); color: #fff; outline: none; }
@@ -142,10 +156,21 @@ body {
 .history-item img { width: 36px; height: 50px; margin-right: 10px; }
 
 /* ÁREA PRINCIPAL */
-.main-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 20px; transition: all 0.3s ease; }
-.logo-area.header-logo { text-align: center; margin-bottom: 25px; margin-top: 10px; }
-.logo-area h1 { font-size: 2.5rem; color: var(--accent-gold); margin: 0; text-shadow: 0 0 15px rgba(255,215,0,0.4); }
+.top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 30px; margin-bottom: 10px; }
+.logo-area { text-align: center; }
+.logo-area h1 { font-size: 2.5rem; color: var(--accent-gold); margin: 0; text-shadow: 0 0 15px rgba(255,215,0,0.4); letter-spacing: 4px; }
+.logo-area p { margin: 0; color: var(--ether-blue); letter-spacing: 8px; font-size: 0.8rem; text-transform: uppercase; text-shadow: 0 0 5px var(--ether-blue); position: relative; top: -5px; }
 
+.life-counter { background: rgba(0, 0, 0, 0.7); border: 1px solid #444; border-radius: 10px; padding: 10px 15px; display: flex; flex-direction: column; align-items: center; min-width: 140px; box-shadow: 0 0 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px); }
+.hp-label { font-size: 0.7rem; font-weight: bold; letter-spacing: 1px; margin-bottom: 5px; }
+.op-label { color: #ff4444; } 
+.me-label { color: var(--ether-blue); } 
+.hp-controls { display: flex; align-items: center; gap: 15px; }
+.hp-value { font-size: 1.8rem; font-weight: 800; color: #fff; min-width: 40px; text-align: center; }
+.hp-controls button { background: rgba(255, 255, 255, 0.1); border: 1px solid #666; color: #fff; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.hp-controls button:hover { background: #fff; color: #000; }
+
+.main-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 20px; transition: all 0.3s ease; }
 #container { width: 100%; max-width: 1200px; aspect-ratio: 16/9; background: #000; border: 1px solid #444; border-radius: 12px; overflow: hidden; position: relative; transition: max-width 0.3s ease; }
 .sidebar.closed + .main-content:has(+ .chat-sidebar.closed) #container { max-width: 1600px; }
 
@@ -156,8 +181,6 @@ video { width: 100%; height: 100%; object-fit: cover; }
 .video-label { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.6); color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; pointer-events: none; z-index: 2; }
 
 /* --- CONTROLES DE VÍDEO (Girar e Mutar) --- */
-
-/* Estilo Base (Botão Redondo no canto Esquerdo) */
 .btn-rotate {
     position: absolute; bottom: 10px; left: 10px; z-index: 20;
     background: rgba(0,0,0,0.6); border: 1px solid var(--accent-gold); color: var(--accent-gold);
@@ -166,21 +189,23 @@ video { width: 100%; height: 100%; object-fit: cover; }
 }
 .btn-rotate:hover { background: var(--accent-gold); color: #000; transform: scale(1.1); }
 
-/* Estilo Específico do Botão Mute (Empilhado acima do Girar) */
+/* Estilo Específico do Botão Mute (Global) */
 #btnMute {
-    /* 10px base + 35px altura do botão de baixo + 10px espaço */
-    bottom: 55px; 
+    position: absolute; /* Garante posição fixa no container */
+    left: 10px;         /* Alinha com os botões de rotação */
+    bottom: 55px;       /* 10px margem + 35px botão girar + 10px espaço */
+    
+    z-index: 50;        /* IMPORTANTE: Fica acima dos vídeos Full e PiP */
+    
     border-color: var(--ether-blue);
     color: var(--ether-blue);
     font-size: 1rem;
 }
-/* Hover do Mute quando ativo (Azul) */
+
 #btnMute:hover { background: var(--ether-blue); color: #000; }
 
-/* Estado Mutado (Vermelho) */
 #btnMute.muted { border-color: #ff4444; color: #ff4444; }
 #btnMute.muted:hover { background: #ff4444; color: #fff; }
-
 
 .rotated { transform: rotate(180deg); }
 
