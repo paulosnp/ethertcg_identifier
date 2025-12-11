@@ -4,20 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ether TCG Scanner</title>
-    
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-    <aside class="sidebar">
-        
-        <div class="logo-area">
-            <h1>ETHER</h1>
-            <p>SCANNER</p>
-        </div>
+    <button id="sidebarToggle" title="Alternar Menu">&lt;</button>
 
-        <div id="login-panel">
+    <aside class="sidebar" id="mainSidebar">
+        
+        <div id="login-panel" style="margin-top: 40px;"> 
             <input type="text" id="room-input" placeholder="Nº DA SALA" maxlength="10">
             <button id="btn-connect" onclick="conectarSala()">ENTRAR</button>
         </div>
@@ -25,20 +21,16 @@
         <div id="result-box">
             <img id="result-img" src="" alt="Carta Identificada">
             <div id="loading" class="spinner"></div>
-            
             <span id="result-text">Aguardando Carta...</span>
-
             <div id="card-details" style="display: none;">
-                <div class="detail-block">
-                    <span id="card-type">TIPO</span>
-                </div>
+                <div class="detail-block"><span id="card-type">TIPO</span></div>
                 <div class="detail-block">
                     <span class="detail-label" style="color: #aaa;">ESPECIAL</span>
                     <p id="card-special" class="detail-text">...</p>
                 </div>
                 <div class="detail-block">
                     <span class="detail-label" style="color: #ff4444;">EFEITO</span>
-                    <p id="card-effect" class="detail-text" style="font-style: italic;">...</p>
+                    <p id="card-effect" class="detail-text">...</p>
                 </div>
             </div>
         </div>
@@ -48,30 +40,55 @@
             <div id="history-list"></div>
         </div>
         
-        <div class="status-panel" style="margin-top: auto; padding-top: 10px; font-size: 0.7rem; color: #555;">
+        <div id="status-overlay" style="display: none; margin-top: auto;">
+            <span class="status-dot"></span>
+            <span id="status-text">Desconectado</span>
+        </div>
+
+        <div class="status-panel" style="padding-top: 10px; font-size: 0.7rem; color: #555;">
             Status: <span style="color: var(--ether-blue)">Online</span>
         </div>
 
     </aside>
 
     <main class="main-content">
+        <div class="logo-area header-logo">
+            <h1>ETHER</h1>
+            <p>SCANNER</p>
+        </div>
         <div id="container">
+            
             <div class="video-wrapper local video-full">
-                <video id="videoInput" autoplay playsinline></video>
+                <video id="videoInput" autoplay playsinline muted></video>
                 <div class="video-label">VOCÊ</div>
+                
+                <button class="btn-rotate" onclick="toggleRotation(event, 'local')" title="Girar 180°">↻</button>
+                
+                <button id="btnMute" class="btn-rotate" onclick="toggleMute(event)" title="Mutar/Desmutar">🎤</button>
+
                 <canvas id="canvasHidden" style="display:none;"></canvas>
             </div>
+
             <div id="remote-wrapper" class="video-wrapper remote" style="display: none;">
                 <video id="remoteVideo" autoplay playsinline></video>
                 <div class="video-label">OPONENTE</div>
+                <button class="btn-rotate" onclick="toggleRotation(event, 'remote')" title="Girar 180°">↻</button>
             </div>
         </div>
     </main>
 
-    <div id="status-overlay" style="display: none;">
-        <span class="status-dot"></span>
-        <span id="status-text">Desconectado</span>
-    </div>
+    <aside class="chat-sidebar" id="chatSidebar">
+        <div class="chat-header">
+            <h3>CHAT DO DUELO</h3>
+        </div>
+        <div id="chat-messages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="msgInput" placeholder="Digite..." onkeypress="handleChatKey(event)">
+            <button onclick="enviarMensagem()">➤</button>
+        </div>
+    </aside>
+
+    <button id="chatToggle" title="Abrir Chat">&lt;</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
