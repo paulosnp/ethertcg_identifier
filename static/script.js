@@ -40,8 +40,8 @@ const hpMeDisplay = document.getElementById('hp-me');
 // ======================================================
 // 2. CONFIGURAÇÕES GLOBAIS
 // ======================================================
-const CROP_W = 500;
-const CROP_H = 700;
+const CROP_W = 300;
+const CROP_H = 420;
 const socket = io();
 let peer = null;
 let myPeerId = null;
