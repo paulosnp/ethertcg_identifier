@@ -1,3 +1,5 @@
+import eventlet
+eventlet.monkey_patch()
 import cv2
 import numpy as np
 import os
@@ -6,7 +8,6 @@ import json
 from datetime import datetime # <--- NOVO
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, join_room, emit
-import eventlet
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'segredo_ether_tcg_master'
