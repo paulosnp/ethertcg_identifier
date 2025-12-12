@@ -1,153 +1,77 @@
 {
     "rastejante_rubro.png": {
         "nome": "Rastejante Rubro",
-        "tipo": "Místico - Vampiro",
-        "especial": "Se houver Sangue no seu campo,essa carta recebe +1.",
-        "efeito": "-1 com Celestiais no campo."
     },
     "pep_fada_da_confusão.png": {
         "nome": "Pep, Fada da Confusão",
-        "tipo": "Místico - Fada",
-        "especial": "Cause 1 de dano à vida do oponente por cada carta descartada na partida. Esse efeito só pode ser ativado, quando uma Fada entrar no seu campo.",
-        "efeito": ""
     },
     "castelo_ebano.png": {
         "nome": "Castelo de Ébano",
-        "tipo": "Terreno - Noite",
-        "especial": "Ganhe Noite no seu campo. Vampiros recebem +1 enquanto este Terreno estiver no seu campo.",
-        "efeito": ""
     },
-    
     "crianca_rubra.jpg": {
         "nome": "Criança Rubra",
-        "tipo": "Místico - Vampiro",
-        "especial": "Se houver Sangue no campo do seu oponente essa carta ganha +2.",
-        "efeito": "-1 com Celestiais no campo"
     },
     "castelo_notivago.jpg": {
         "nome": "Castelo Notívago",
-        "tipo": "Terreno - Noite",
-        "especial": "Ganhe Noite no seu campo. Vampiros recebem +1 enquanto este Terreno estiver no seu campo.",
-        "efeito": ""
     },
     "bosque_antigo.jpg": {
         "nome": "Bosque Antigo",
-        "tipo": "Terreno",
-        "especial": "Fadas recebem +1 enquanto este Terreno estiver no seu campo.",
-        "efeito": ""
     },
     "castelo_ebano.jpg": {
         "nome": "Castelo de Ébano",
-        "tipo": "Terreno - Noite",
-        "especial": "Ganhe Noite no seu campo. Vampiros recebem +1 enquanto este Terreno estiver no seu campo.",
-        "efeito": ""
     },
     "ambiente_das_fadas.jpg": {
         "nome": "Ambiente das Fadas",
-        "tipo": "Terreno",
-        "especial": "Fadas recebem +1 enquanto este Terreno estiver no seu campo.",
-        "efeito": ""
     },
     "borboleta_eteria.jpg": {
         "nome": "Borboleta Etéria",
-        "tipo": "Místico - Fada",
-        "especial": "Essa carta não pode sofrer dano.",
-        "efeito": "Fadas do seu campo recebem +1."
     },
     "banho_de_sangue.jpg": {
         "nome": "Banho de Sangue",
-        "tipo": "Efeito de Ativação",
-        "especial": "Se houver Noite em qualquer campo, crie 2 Pilha Sangue. Depois, descarte essa carta.",
-        "efeito": "Esse efeito pode ser anulado."
     },
     "convocacao_rubra.jpg": {
         "nome": "Convocação Rubra",
-        "tipo": "Efeito de Ativação",
-        "especial": "Coloque a Criança Rubra da sua mão no seu campo e depois compre uma carta. Depois, descarte essa carta.",
-        "efeito": "Esse efeito pode ser anulado."
     },
     "castelo_notivado_2.jpg": {
         "nome": "Castelo Notívago",
-        "tipo": "Terreno - Noite",
-        "especial": "O seu campo está de Noite. Enquanto este Terreno estiver no seu campo, Vampiros ganham +1.",
-        "efeito": ""
     },
     "aeris_pluma_celeste.jpg": {
         "nome": "Aeris, Pluma Celeste",
-        "tipo": "Místico - Fada",
-        "especial": "Fadas do seu campo recebem +3.",
-        "efeito": "+1 com Livro ativo no seu campo. -1 com Ciência no campo."
     },
     "pep_fada_da_confusao.jpg": {
         "nome": "Pep, Fada da Confusão",
-        "tipo": "Místico - Fada",
-        "especial": "Cause 1 de dano à vida do oponente por cada carta descartada na partida. Esse efeito só pode ser ativado, quando uma Fada entrar no seu campo.",
-        "efeito": ""
     },
     "livro_1.jpg": {
         "nome": "Livro",
-        "tipo": "Pilha",
-        "especial": "Coloque quantas unidades quiser sobre esta carta e receba os efeitos das cartas no campo do seu controlador.",
-        "efeito": "Não precisa de preparação."
     },
     "sacerdotisa_rubra.jpg": {
         "nome": "Sacerdotisa Rubra",
-        "tipo": "Místico - Vampiro",
-        "especial": "Por cada X Sangue descartado, a sua carta em Preparação recebe +1.",
-        "efeito": "-1 com Celestiais no campo"
     },
     "vampiro_da_penunbra.jpg": {
         "nome": "Vampiro da Penumbra",
-        "tipo": "Místico - Vampiro",
-        "especial": "Se houver Noite no seu campo, essa carta perde -1 e outra carta sua em Preparação recebe +1.",
-        "efeito": "-1 com Celestiais no campo"
     },
     "sangue_1.jpg": {
         "nome": "Sangue",
-        "tipo": "Pilha",
-        "especial": "Coloque quantas unidades quiser sobre esta carta e receba os efeitos das cartas no campo do seu controlador.",
-        "efeito": "Não precisa de preparação."
     },
     "sombrio_do_banquete.jpg": {
         "nome": "Sombrio do Banquete",
-        "tipo": "Místico - Vampiro/Elfo",
-        "especial": "Essa carta ganha +1 por cada X Sangue no seu campo ou no do adversário.",
-        "efeito": "-1 com Celestiais no campo"
     },
     "solira_brilho_da_manha.jpg": {
         "nome": "Solira, Brilho da Manhã",
-        "tipo": "Místico - Fada",
-        "especial": "Recupere 5 pontos de vida. Seres da Floresta do seu campo recebem +1.",
-        "efeito": ""
     },
     "pep_fada_da_confusão.jpg": {
         "nome": "Pep, Fada da Confusão",
-        "tipo": "Místico - Fada",
-        "especial": "Cause 1 de dano à vida do oponente por cada carta descartada na partida. Esse efeito só pode ser ativado, quando uma Fada entrar no seu campo.",
-        "efeito": ""
     },
     "sangue_2.jpg": {
         "nome": "Sangue",
-        "tipo": "Pilha",
-        "especial": "Coloque quantas unidades quiser sobre esta carta e receba os efeitos das cartas no campo do seu controlador.",
-        "efeito": "Não precisa de preparação."
     },
     "serpente_de_brasa.jpg": {
         "nome": "Serpente de Brasa",
-        "tipo": "Místico - Folclore",
-        "especial": "Sua criatura do seu lado direito recebe -1 e a última do oponente -2. Folclores do seu campo recebem +1.",
-        "efeito": "-1 com Ciência no campo."
     },
     "torre_de_cristal.jpg": {
         "nome": "Torre de Cristal",
-        "tipo": "Terreno",
-        "especial": "No início do seu turno, se houver Elfo no seu campo, cause 1 de dano nos pontos de vida do seu oponente.",
-        "efeito": ""
     },
     "vorth_deusa_da_alvorada.jpg": {
         "nome": "Vorth, Deusa da Alvorada",
-        "tipo": "Místico - Fada",
-        "especial": "Assuma o controle das criaturas do oponente nesse turno. Apenas Vorth e as criaturas do seu oponente podem atacar nesse turno.",
-        "efeito": ""
     }
 }
