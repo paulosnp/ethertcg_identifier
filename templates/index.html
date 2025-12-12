@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ether TCG Scanner</title>
+    <title>Ether Duel</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -12,27 +12,15 @@
     <button id="sidebarToggle" title="Alternar Menu">&lt;</button>
 
     <aside class="sidebar" id="mainSidebar">
-        
         <div id="login-panel" style="margin-top: 40px;"> 
             <input type="text" id="room-input" placeholder="Nº DA SALA" maxlength="10">
             <button id="btn-connect" onclick="conectarSala()">ENTRAR</button>
         </div>
 
-        <div id="result-box">
+        <div id="result-box" title="Clique para ampliar" onclick="expandCard()">
             <img id="result-img" src="" alt="Carta Identificada">
             <div id="loading" class="spinner"></div>
             <span id="result-text">Aguardando Carta...</span>
-            <div id="card-details" style="display: none;">
-                <div class="detail-block"><span id="card-type">TIPO</span></div>
-                <div class="detail-block">
-                    <span class="detail-label" style="color: #aaa;">ESPECIAL</span>
-                    <p id="card-special" class="detail-text">...</p>
-                </div>
-                <div class="detail-block">
-                    <span class="detail-label" style="color: #ff4444;">EFEITO</span>
-                    <p id="card-effect" class="detail-text">...</p>
-                </div>
-            </div>
         </div>
 
         <div class="history-panel">
@@ -44,17 +32,14 @@
             <span class="status-dot"></span>
             <span id="status-text">Desconectado</span>
         </div>
-
         <div class="status-panel" style="padding-top: 10px; font-size: 0.7rem; color: #555;">
             Status: <span style="color: var(--ether-blue)">Online</span>
         </div>
-
     </aside>
 
     <main class="main-content">
         
         <header class="top-bar">
-            
             <div class="life-counter">
                 <span class="hp-label op-label">OPONENTE</span>
                 <div class="hp-controls">
@@ -66,7 +51,7 @@
 
             <div class="logo-area">
                 <h1>ETHER</h1>
-                <p>SCANNER</p>
+                <p>DUEL</p>
             </div>
 
             <div class="life-counter">
@@ -77,40 +62,72 @@
                     <button onclick="changeLife('me', 1)">+</button>
                 </div>
             </div>
-
-        </header>
+            </header>
 
         <div id="container">
-            
-            <button id="btnMute" class="btn-rotate" onclick="toggleMute(event)" title="Mutar/Desmutar">🎤</button>
-
             <div class="video-wrapper local video-full">
                 <video id="videoInput" autoplay playsinline muted></video>
                 <div class="video-label">VOCÊ</div>
                 <button class="btn-rotate" onclick="toggleRotation(event, 'local')" title="Girar 180°">↻</button>
+                <button id="btnMute" class="btn-rotate" onclick="toggleMute(event)" title="Mutar/Desmutar">🎤</button>
                 <canvas id="canvasHidden" style="display:none;"></canvas>
             </div>
-
             <div id="remote-wrapper" class="video-wrapper remote" style="display: none;">
                 <video id="remoteVideo" autoplay playsinline></video>
                 <div class="video-label">OPONENTE</div>
                 <button class="btn-rotate" onclick="toggleRotation(event, 'remote')" title="Girar 180°">↻</button>
             </div>
         </div>
+
+        <div class="controls-area">
+            
+            <div id="settings-popup" class="popup-box" style="display: none;">
+                <div class="popup-header">CONFIGURAÇÕES</div>
+                <div class="setting-item">
+                    <span>Efeitos Sonoros</span>
+                    <label class="switch">
+                        <input type="checkbox" id="chkSound" checked onchange="toggleSoundSetting()">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button id="btnSettings" onclick="toggleSettings()" title="Configurações">⚙️</button>
+        </div>
+
     </main>
 
     <aside class="chat-sidebar" id="chatSidebar">
-        <div class="chat-header">
-            <h3>CHAT DO DUELO</h3>
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab('chat')">
+                CHAT <span id="badge-chat" class="badge" style="display:none">0</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('logs')">
+                LOGS <span id="badge-logs" class="badge" style="display:none">0</span>
+            </button>
         </div>
-        <div id="chat-messages"></div>
-        <div class="chat-input-area">
-            <input type="text" id="msgInput" placeholder="Digite..." onkeypress="handleChatKey(event)">
-            <button onclick="enviarMensagem()">➤</button>
+        <div id="chat-container" class="tab-content active">
+            <div id="chat-messages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="msgInput" placeholder="Digite..." onkeypress="handleChatKey(event)">
+                <button onclick="enviarMensagem()">➤</button>
+            </div>
+        </div>
+        <div id="logs-container" class="tab-content" style="display:none;">
+            <div id="log-messages"></div>
         </div>
     </aside>
 
-    <button id="chatToggle" title="Abrir Chat">&lt;</button>
+    <button id="chatToggle" title="Abrir Painel">&lt;</button>
+
+    <div id="card-modal" class="modal-overlay" onclick="closeCardModal()">
+        <span class="close-btn">&times;</span>
+        <img id="modal-img" src="">
+    </div>
+
+    <audio id="snd-msg" src="{{ url_for('static', filename='sounds/message.mp3') }}"></audio>
+    <audio id="snd-life" src="{{ url_for('static', filename='sounds/click.mp3') }}"></audio>
+    <audio id="snd-scan" src="{{ url_for('static', filename='sounds/scan.mp3') }}"></audio>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
