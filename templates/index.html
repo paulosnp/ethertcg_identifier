@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ether Duel</title>
+    <title>Ether TCG Scanner</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -16,18 +16,15 @@
             <input type="text" id="room-input" placeholder="Nº DA SALA" maxlength="10">
             <button id="btn-connect" onclick="conectarSala()">ENTRAR</button>
         </div>
-
         <div id="result-box" title="Clique para ampliar" onclick="expandCard()">
-            <img id="result-img" src="" alt="Carta Identificada">
+            <img id="result-img" src="" alt="Carta Identificada" draggable="false" class="protected-img">
             <div id="loading" class="spinner"></div>
             <span id="result-text">Aguardando Carta...</span>
         </div>
-
         <div class="history-panel">
             <h3>HISTÓRICO</h3>
             <div id="history-list"></div>
         </div>
-        
         <div id="status-overlay" style="display: none; margin-top: auto;">
             <span class="status-dot"></span>
             <span id="status-text">Desconectado</span>
@@ -38,7 +35,6 @@
     </aside>
 
     <main class="main-content">
-        
         <header class="top-bar">
             <div class="life-counter">
                 <span class="hp-label op-label">OPONENTE</span>
@@ -48,12 +44,10 @@
                     <button onclick="changeLife('op', 1)">+</button>
                 </div>
             </div>
-
             <div class="logo-area">
                 <h1>ETHER</h1>
-                <p>DUEL</p>
+                <p>SCANNER</p>
             </div>
-
             <div class="life-counter">
                 <span class="hp-label me-label">VOCÊ</span>
                 <div class="hp-controls">
@@ -62,25 +56,33 @@
                     <button onclick="changeLife('me', 1)">+</button>
                 </div>
             </div>
-            </header>
+        </header>
 
         <div id="container">
-            <div class="video-wrapper local video-full">
+            <div class="video-wrapper local video-full" id="wrapper-local">
                 <video id="videoInput" autoplay playsinline muted></video>
-                <div class="video-label">VOCÊ</div>
-                <button class="btn-rotate" onclick="toggleRotation(event, 'local')" title="Girar 180°">↻</button>
-                <button id="btnMute" class="btn-rotate" onclick="toggleMute(event)" title="Mutar/Desmutar">🎤</button>
+                <div id="label-local" class="video-label">VOCÊ</div>
+                <div class="local-controls">
+                    <button class="btn-rotate" onclick="toggleRotation(event, 'local')" title="Girar 180°">↻</button>
+                </div>
                 <canvas id="canvasHidden" style="display:none;"></canvas>
             </div>
             <div id="remote-wrapper" class="video-wrapper remote" style="display: none;">
                 <video id="remoteVideo" autoplay playsinline></video>
-                <div class="video-label">OPONENTE</div>
-                <button class="btn-rotate" onclick="toggleRotation(event, 'remote')" title="Girar 180°">↻</button>
+                <div id="label-remote" class="video-label">OPONENTE</div>
+                <div class="remote-controls">
+                    <button class="btn-rotate" onclick="toggleRotation(event, 'remote')" title="Girar 180°">↻</button>
+                </div>
             </div>
+            <button id="btnMute" class="btn-rotate" onclick="toggleMute(event)" title="Mutar/Desmutar">🎤</button>
         </div>
 
         <div class="controls-area">
             
+            <div id="spectator-counter" class="spec-counter" style="display: none;">
+                👁️ <span id="spec-count-val">0</span>
+            </div>
+
             <div id="settings-popup" class="popup-box" style="display: none;">
                 <div class="popup-header">CONFIGURAÇÕES</div>
                 <div class="setting-item">
@@ -90,29 +92,53 @@
                         <span class="slider round"></span>
                     </label>
                 </div>
+                <div class="setting-item" id="opt-share-audio">
+                    <span>Áudio p/ Espectador</span>
+                    <label class="switch">
+                        <input type="checkbox" id="chkShareAudio" onchange="toggleShareAudio()">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
             </div>
 
             <button id="btnSettings" onclick="toggleSettings()" title="Configurações">⚙️</button>
         </div>
-
     </main>
 
     <aside class="chat-sidebar" id="chatSidebar">
         <div class="tabs-header">
             <button class="tab-btn active" onclick="switchTab('chat')">
-                CHAT <span id="badge-chat" class="badge" style="display:none">0</span>
+                DUELO <span id="badge-chat" class="badge" style="display:none">0</span>
             </button>
+            
+            <button id="btn-tab-spec" class="tab-btn" onclick="switchTab('spec')" style="display: none;">
+                SPECT <span id="badge-spec" class="badge" style="display:none">0</span>
+            </button>
+            
             <button class="tab-btn" onclick="switchTab('logs')">
                 LOGS <span id="badge-logs" class="badge" style="display:none">0</span>
             </button>
         </div>
+
         <div id="chat-container" class="tab-content active">
             <div id="chat-messages"></div>
-            <div class="chat-input-area">
-                <input type="text" id="msgInput" placeholder="Digite..." onkeypress="handleChatKey(event)">
-                <button onclick="enviarMensagem()">➤</button>
+            <div class="chat-input-area" id="input-duel">
+                <input type="text" id="msgInput" placeholder="Chat Duelo..." onkeypress="handleChatKey(event, 'duel')">
+                <button onclick="enviarMensagem('duel')">➤</button>
+            </div>
+            <div id="spectator-blocked-msg" style="display:none; padding:20px; text-align:center; color:#555; font-size:0.8rem;">
+                Chat de Duelo (Privado)
             </div>
         </div>
+
+        <div id="spec-container" class="tab-content" style="display:none;">
+            <div id="spec-messages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="msgSpecInput" placeholder="Chat Plateia..." onkeypress="handleChatKey(event, 'spec')">
+                <button onclick="enviarMensagem('spec')">➤</button>
+            </div>
+        </div>
+
         <div id="logs-container" class="tab-content" style="display:none;">
             <div id="log-messages"></div>
         </div>
@@ -122,9 +148,11 @@
 
     <div id="card-modal" class="modal-overlay" onclick="closeCardModal()">
         <span class="close-btn">&times;</span>
-        <img id="modal-img" src="">
+        <div style="position: relative; display: inline-block;">
+            <img id="modal-img" src="" draggable="false" class="protected-img">
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50;"></div>
+        </div>
     </div>
-
     <audio id="snd-msg" src="{{ url_for('static', filename='sounds/message.mp3') }}"></audio>
     <audio id="snd-life" src="{{ url_for('static', filename='sounds/click.mp3') }}"></audio>
     <audio id="snd-scan" src="{{ url_for('static', filename='sounds/scan.mp3') }}"></audio>

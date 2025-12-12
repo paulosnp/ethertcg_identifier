@@ -1,6 +1,7 @@
 // ======================================================
-// 1. REFERÊNCIAS
+// 1. REFERÊNCIAS DO DOM
 // ======================================================
+const container = document.getElementById('container');
 const video = document.getElementById('videoInput');
 const remoteVideo = document.getElementById('remoteVideo');
 const remoteWrapper = document.getElementById('remote-wrapper');
@@ -8,44 +9,56 @@ const localWrapper = document.querySelector('.video-wrapper.local');
 const canvas = document.getElementById('canvasHidden');
 const ctx = canvas.getContext('2d');
 
+// UI Elementos
 const resultImg = document.getElementById('result-img');
 const resultText = document.getElementById('result-text');
 const resultBox = document.getElementById('result-box');
 const spinner = document.getElementById('loading');
 const historyList = document.getElementById('history-list');
-
 const loginPanel = document.getElementById('login-panel');
 const roomInput = document.getElementById('room-input');
 const statusOverlay = document.getElementById('status-overlay');
 const statusText = document.getElementById('status-text');
 
+// Sidebars
 const sidebarToggleBtn = document.getElementById('sidebarToggle');
 const mainSidebar = document.getElementById('mainSidebar');
 const chatToggleBtn = document.getElementById('chatToggle');
 const chatSidebar = document.getElementById('chatSidebar');
 
+// Chats
 const msgInput = document.getElementById('msgInput');
+const msgSpecInput = document.getElementById('msgSpecInput');
 const chatMessages = document.getElementById('chat-messages');
+const specMessages = document.getElementById('spec-messages');
 const logMessages = document.getElementById('log-messages');
+
 const chatContainer = document.getElementById('chat-container');
+const specContainer = document.getElementById('spec-container');
 const logsContainer = document.getElementById('logs-container');
+
 const badgeChat = document.getElementById('badge-chat');
+const badgeSpec = document.getElementById('badge-spec');
 const badgeLogs = document.getElementById('badge-logs');
 
+// Botão Aba Spectator e Contador
+const btnTabSpec = document.getElementById('btn-tab-spec');
+const spectatorCounter = document.getElementById('spectator-counter');
+const specCountVal = document.getElementById('spec-count-val');
+
+// Sons e Controles
 const sndMsg = document.getElementById('snd-msg');
 const sndLife = document.getElementById('snd-life');
 const sndScan = document.getElementById('snd-scan');
-
 const btnMute = document.getElementById('btnMute');
 const hpOpDisplay = document.getElementById('hp-op');
 const hpMeDisplay = document.getElementById('hp-me');
-
 const cardModal = document.getElementById('card-modal');
-const modalImg = document.getElementById('modal-img');
-
-// NOVO: Referência ao Popup
 const settingsPopup = document.getElementById('settings-popup');
 const btnSettings = document.getElementById('btnSettings');
+const modalImg = document.getElementById('modal-img');
+const labelLocal = document.getElementById('label-local');
+const labelRemote = document.getElementById('label-remote');
 
 // ======================================================
 // 2. ESTADO
@@ -59,17 +72,18 @@ let salaAtual = "";
 let isLocalMain = true;
 let isLocalRotated = false;
 let isRemoteRotated = false;
-let hpOp = 20;
+let hpOp = 20; 
 let hpMe = 20;
 
 let activeTab = 'chat';
-let unreadChat = 0;
-let unreadLogs = 0;
-
 let isSoundOn = true;
+let shareAudioWithSpecs = false; // Config do Jogador
+
+let isSpectator = false; // Definido pelo servidor
+let spectatorSlots = 0;
 
 // ======================================================
-// 3. FUNÇÃO DE SOM E POPUP CONFIG
+// 3. UI, SONS E CONFIGURAÇÕES
 // ======================================================
 function tocarSom(tipo) {
     if (!isSoundOn) return;
@@ -81,12 +95,11 @@ function tocarSom(tipo) {
 
         if (audio) {
             audio.currentTime = 0;
-            audio.play().catch(e => console.log("Som bloqueado"));
+            audio.play().catch(e => {}); 
         }
-    } catch (e) { console.log("Erro ao tocar som", e); }
+    } catch (e) {}
 }
 
-// Abre/Fecha o Popup
 function toggleSettings() {
     if (settingsPopup.style.display === 'block') {
         settingsPopup.style.display = 'none';
@@ -95,7 +108,6 @@ function toggleSettings() {
     }
 }
 
-// Fecha o popup se clicar fora dele
 window.onclick = function(event) {
     if (event.target !== settingsPopup && event.target !== btnSettings && !settingsPopup.contains(event.target)) {
         settingsPopup.style.display = 'none';
@@ -106,69 +118,352 @@ function toggleSoundSetting() {
     isSoundOn = document.getElementById('chkSound').checked;
 }
 
-// ======================================================
-// 4. EFEITO 3D NA CARTA
-// ======================================================
-if (resultBox) {
-    resultBox.addEventListener('mousemove', (e) => {
-        if (resultImg.style.display === 'none' || resultImg.src === "") return;
-        const rect = resultBox.getBoundingClientRect();
-        const sensibilidade = 10; 
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const xPct = (x / rect.width) - 0.5;
-        const yPct = (y / rect.height) - 0.5;
-        const rotateY = xPct * sensibilidade;
-        const rotateX = yPct * -sensibilidade;
-        resultImg.style.transform = `perspective(1000px) translateZ(20px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
-    });
-
-    resultBox.addEventListener('mouseleave', () => {
-        resultImg.style.transform = `perspective(1000px) translateZ(0px) rotateX(0deg) rotateY(0deg) scale(1)`;
-    });
+function toggleShareAudio() {
+    shareAudioWithSpecs = document.getElementById('chkShareAudio').checked;
 }
 
-// ======================================================
-// 5. MODAL DE ZOOM (CARTA)
-// ======================================================
-function expandCard() {
-    if (resultImg.src && resultImg.src !== window.location.href && resultImg.style.display !== 'none') {
-        modalImg.src = resultImg.src;
-        cardModal.style.display = 'flex';
-    }
-}
-function closeCardModal() {
-    cardModal.style.display = 'none';
-}
-
-// ======================================================
-// 6. UI: ABAS E NOTIFICAÇÕES
-// ======================================================
 function switchTab(tabName) {
     activeTab = tabName;
     const btns = document.querySelectorAll('.tab-btn');
     btns.forEach(btn => btn.classList.remove('active'));
     
-    if (tabName === 'chat') {
-        btns[0].classList.add('active');
-        chatContainer.style.display = 'flex';
-        logsContainer.style.display = 'none';
-        unreadChat = 0;
-        badgeChat.style.display = 'none';
-        badgeChat.innerText = '0';
-    } else {
-        btns[1].classList.add('active');
-        chatContainer.style.display = 'none';
-        logsContainer.style.display = 'flex';
-        unreadLogs = 0;
-        badgeLogs.style.display = 'none';
-        badgeLogs.innerText = '0';
+    let idx = 0;
+    if (tabName === 'spec') idx = 1;
+    if (tabName === 'logs') idx = 2;
+    btns[idx].classList.add('active');
+
+    chatContainer.style.display = 'none';
+    specContainer.style.display = 'none';
+    logsContainer.style.display = 'none';
+
+    if (tabName === 'chat') chatContainer.style.display = 'flex';
+    else if (tabName === 'spec') specContainer.style.display = 'flex';
+    else if (tabName === 'logs') logsContainer.style.display = 'flex';
+
+    const badge = document.getElementById('badge-' + tabName);
+    if (badge) {
+        badge.innerText = '0';
+        badge.style.display = 'none';
     }
 }
 
 // ======================================================
-// 7. UI: SIDEBARS E VIDEO
+// 4. LOGIN E DEFINIÇÃO DE PAPEL
 // ======================================================
+function conectarSala() {
+    if (!roomInput || roomInput.value.trim() === "") { alert("Digite a Sala!"); return; }
+    salaAtual = roomInput.value.trim();
+    
+    socket.emit('entrar_sala', { sala: salaAtual });
+    
+    if (loginPanel) { loginPanel.style.opacity = '0'; setTimeout(() => { loginPanel.style.display = 'none'; }, 500); }
+    if (statusOverlay) { statusOverlay.style.display = 'flex'; statusText.innerText = "ENTRANDO..."; }
+}
+
+socket.on('configurar_papel', (data) => {
+    isSpectator = (data.role === 'spectator');
+    console.log("Entrei na sala como:", data.role);
+    
+    if (isSpectator) {
+        setupSpectatorMode();
+        iniciarPeer(null); 
+    } else {
+        setupPlayerMode();
+        navigator.mediaDevices.getUserMedia({ 
+            video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, 
+            audio: true 
+        })
+        .then(stream => {
+            video.srcObject = stream;
+            video.muted = true; 
+            iniciarPeer(stream);
+        })
+        .catch(e => {
+            console.error(e);
+            alert("Erro ao acessar câmera/microfone.");
+        });
+    }
+});
+
+function setupPlayerMode() {
+    statusText.innerText = `JOGADOR - SALA ${salaAtual}`;
+    document.getElementById('opt-share-audio').style.display = 'flex'; 
+}
+
+function setupSpectatorMode() {
+    statusText.innerText = `ESPECTADOR - SALA ${salaAtual}`;
+    
+    // Layout Vertical
+    container.classList.add('spectator-view');
+    labelLocal.innerText = "JOGADOR 1";
+    labelRemote.innerText = "JOGADOR 2";
+    
+    // Esconde controles que espectador não usa
+    document.querySelector('.local-controls').style.display = 'none';
+    document.querySelector('.remote-controls').style.display = 'none';
+    btnMute.style.display = 'none';
+    document.getElementById('opt-share-audio').style.display = 'none';
+
+    // --- NOVO: ESCONDE BOTÕES DE VIDA (+/-) ---
+    document.querySelectorAll('.hp-controls button').forEach(btn => {
+        btn.style.display = 'none';
+    });
+
+    // Bloqueia Chat de Duelo e mostra aviso
+    document.getElementById('input-duel').style.display = 'none';
+    document.getElementById('spectator-blocked-msg').style.display = 'block';
+    
+    btnTabSpec.style.display = 'block';
+    switchTab('spec');
+}
+
+// ATUALIZAÇÃO DA CONTAGEM DE ESPECTADORES
+socket.on('update_specs_count', (data) => {
+    const count = data.count;
+    
+    if (specCountVal) specCountVal.innerText = count;
+    
+    if (count > 0) {
+        if(spectatorCounter) spectatorCounter.style.display = 'flex';
+    } else {
+        if(spectatorCounter) spectatorCounter.style.display = 'none';
+    }
+
+    if (count > 0 || isSpectator) {
+        if(btnTabSpec) btnTabSpec.style.display = 'block';
+    } else {
+        if(btnTabSpec) btnTabSpec.style.display = 'none';
+        if (activeTab === 'spec') switchTab('chat');
+    }
+});
+
+// ======================================================
+// 5. PEERJS E ÁUDIO
+// ======================================================
+function iniciarPeer(myStream) {
+    peer = new Peer(undefined, { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
+    
+    peer.on('open', (id) => {
+        myPeerId = id;
+        socket.emit('aviso_peer_id', { 
+            sala: salaAtual, 
+            peerId: myPeerId, 
+            role: (isSpectator ? 'spec' : 'player') 
+        });
+    });
+
+    peer.on('call', (call) => {
+        if (!isSpectator) {
+            let streamToSend = myStream;
+            
+            if (!shareAudioWithSpecs && call.metadata && call.metadata.role === 'spec') {
+                const videoTracks = myStream.getVideoTracks();
+                if (videoTracks.length > 0) {
+                    streamToSend = new MediaStream([videoTracks[0]]);
+                }
+            } else if (!shareAudioWithSpecs) {
+                 const videoTracks = myStream.getVideoTracks();
+                 if(videoTracks.length > 0) streamToSend = new MediaStream([videoTracks[0]]);
+            }
+            
+            call.answer(streamToSend);
+            call.on('stream', (rs) => mostrarVideoOponente(rs));
+        } else {
+            call.answer(); 
+            call.on('stream', (rs) => handleSpectatorStream(rs));
+        }
+    });
+}
+
+socket.on('novo_peer_na_sala', (data) => {
+    if (data.peerId === myPeerId) return;
+
+    if (!isSpectator) {
+        if (data.role === 'player') {
+            const call = peer.call(data.peerId, video.srcObject, { metadata: { role: 'player' } });
+            call.on('stream', (rs) => mostrarVideoOponente(rs));
+        } else {
+            let streamToSend = video.srcObject;
+            
+            if (!shareAudioWithSpecs) {
+                const vt = video.srcObject.getVideoTracks();
+                if (vt.length > 0) streamToSend = new MediaStream([vt[0]]);
+            }
+            
+            peer.call(data.peerId, streamToSend, { metadata: { role: 'player' } });
+        }
+    }
+});
+
+function mostrarVideoOponente(stream) {
+    if (remoteVideo) {
+        remoteVideo.srcObject = stream;
+        remoteVideo.muted = false; 
+        isLocalMain = false; 
+        atualizarLayout();
+    }
+}
+
+function handleSpectatorStream(stream) {
+    if (spectatorSlots === 0) {
+        video.srcObject = stream;
+        video.muted = false; 
+        spectatorSlots = 1;
+    } else {
+        remoteVideo.srcObject = stream;
+        remoteVideo.muted = false;
+        remoteWrapper.style.display = 'flex';
+        spectatorSlots = 2;
+    }
+}
+
+// ======================================================
+// 6. CHATS (DUELO E SPEC)
+// ======================================================
+function handleChatKey(e, tipo) { if (e.key === 'Enter') enviarMensagem(tipo); }
+
+function enviarMensagem(tipo) {
+    const input = (tipo === 'duel') ? msgInput : msgSpecInput;
+    const texto = input.value.trim();
+    if (texto === "" || salaAtual === "") return;
+    
+    socket.emit('enviar_chat', { sala: salaAtual, texto: texto, remetente: socket.id, tipo: tipo });
+    input.value = "";
+}
+
+socket.on('receber_chat', (data) => {
+    if (data.tipo === 'duel' && isSpectator) return;
+
+    let targetDiv = null;
+    let targetTab = '';
+
+    if (data.tipo === 'duel') {
+        targetDiv = chatMessages;
+        targetTab = 'chat';
+    } else {
+        targetDiv = specMessages;
+        targetTab = 'spec';
+    }
+
+    const div = document.createElement('div');
+    div.classList.add('message-bubble');
+    
+    if (data.remetente === socket.id) {
+        div.classList.add('msg-me');
+        div.innerText = data.texto;
+    } else {
+        div.classList.add('msg-op');
+        div.innerText = (data.tipo === 'spec' ? "[Spec] " : "") + data.texto;
+        
+        tocarSom('msg');
+        
+        if (chatSidebar.classList.contains('closed') || activeTab !== targetTab) {
+            const badge = document.getElementById('badge-' + targetTab);
+            if (badge) {
+                let count = parseInt(badge.innerText || '0') + 1;
+                badge.innerText = count;
+                badge.style.display = 'block';
+            }
+        }
+    }
+    targetDiv.appendChild(div);
+    targetDiv.scrollTop = targetDiv.scrollHeight;
+});
+
+socket.on('log_vida', (data) => {
+    const div = document.createElement('div'); 
+    div.classList.add('msg-log');
+    
+    let ator = (data.remetente === socket.id) ? "VOCÊ" : "OPONENTE";
+    if (isSpectator) ator = "JOGADOR"; 
+
+    const sinal = data.delta > 0 ? "+" : "";
+    div.innerText = `[${data.hora}] ${ator} alterou vida: ${sinal}${data.delta} (Total: ${data.valor_final})`;
+    
+    logMessages.appendChild(div);
+    logMessages.scrollTop = logMessages.scrollHeight;
+
+    tocarSom('msg');
+
+    if (chatSidebar.classList.contains('closed') || activeTab !== 'logs') {
+        const badge = document.getElementById('badge-logs');
+        let count = parseInt(badge.innerText || '0') + 1;
+        badge.innerText = count;
+        badge.style.display = 'block';
+    }
+});
+
+// ======================================================
+// 7. VIDA (LÓGICA)
+// ======================================================
+function changeLife(target, amount) {
+    if (isSpectator) return; 
+
+    if (target === 'op') {
+        hpOp += amount; if(hpOp<0)hpOp=0; if(hpOp>40)hpOp=40; hpOpDisplay.innerText = hpOp;
+    } else if (target === 'me') {
+        hpMe += amount; if(hpMe<0)hpMe=0; if(hpMe>40)hpMe=40; hpMeDisplay.innerText = hpMe;
+    }
+    tocarSom('life');
+    if (salaAtual !== "") {
+        socket.emit('atualizar_vida', { sala: salaAtual, alvo: target, valor: (target==='me'?hpMe:hpOp), delta: amount });
+    }
+}
+
+socket.on('receber_vida', (data) => {
+    if (!isSpectator) {
+        if (data.alvo === 'me') { hpOp = data.valor; hpOpDisplay.innerText = hpOp; }
+        else if (data.alvo === 'op') { hpMe = data.valor; hpMeDisplay.innerText = hpMe; }
+    } 
+    tocarSom('life');
+});
+
+// ======================================================
+// 8. LAYOUT, CARTA E OUTROS
+// ======================================================
+function atualizarLayout() {
+    if (isSpectator) return; 
+
+    if (localWrapper) localWrapper.classList.remove('video-full', 'video-pip');
+    if (remoteWrapper) remoteWrapper.classList.remove('video-full', 'video-pip');
+    
+    if (isLocalMain) {
+        localWrapper.classList.add('video-full');
+        if (remoteVideo.srcObject && remoteWrapper) { 
+            remoteWrapper.classList.add('video-pip'); 
+            remoteWrapper.style.display = 'flex'; 
+        } else {
+            remoteWrapper.style.display = 'none';
+        }
+    } else {
+        if (remoteWrapper) { 
+            remoteWrapper.classList.add('video-full'); 
+            remoteWrapper.style.display = 'flex'; 
+        }
+        localWrapper.classList.add('video-pip');
+    }
+}
+
+function toggleLayout() { 
+    if (isSpectator) return;
+    if (!remoteVideo.srcObject) return; 
+    isLocalMain = !isLocalMain; 
+    atualizarLayout(); 
+}
+
+if (localWrapper) {
+    localWrapper.addEventListener('click', (e) => {
+        if (!isLocalMain && !isSpectator) { e.stopPropagation(); toggleLayout(); return; }
+        realizarScanLocal(e.clientX, e.clientY);
+    });
+}
+if (remoteWrapper) {
+    remoteWrapper.addEventListener('click', (e) => {
+        if (isLocalMain && !isSpectator) { e.stopPropagation(); toggleLayout(); return; }
+        realizarScanRemoto(e.clientX, e.clientY);
+    });
+}
+
 if (sidebarToggleBtn && mainSidebar) {
     sidebarToggleBtn.addEventListener('click', () => {
         mainSidebar.classList.toggle('closed');
@@ -182,11 +477,12 @@ if (chatToggleBtn && chatSidebar) {
         chatToggleBtn.classList.toggle('closed');
         chatToggleBtn.innerHTML = chatSidebar.classList.contains('closed') ? "&lt;" : "&gt;";
         if (!chatSidebar.classList.contains('closed')) {
-            if (activeTab === 'chat') { unreadChat = 0; badgeChat.style.display = 'none'; }
-            if (activeTab === 'logs') { unreadLogs = 0; badgeLogs.style.display = 'none'; }
+            const badge = document.getElementById('badge-' + activeTab);
+            if(badge) { badge.innerText='0'; badge.style.display='none'; }
         }
     });
 }
+
 function toggleRotation(event, target) {
     event.stopPropagation(); 
     if (target === 'local') {
@@ -197,8 +493,11 @@ function toggleRotation(event, target) {
         remoteVideo.classList.toggle('rotated', isRemoteRotated);
     }
 }
+
 function toggleMute(event) {
     event.stopPropagation();
+    if (isSpectator) return;
+
     const audioTrack = video.srcObject.getAudioTracks()[0];
     if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled; 
@@ -210,141 +509,58 @@ function toggleMute(event) {
     }
 }
 
-// ======================================================
-// 8. CHAT E LOGS (SOCKETS)
-// ======================================================
-function handleChatKey(e) { if (e.key === 'Enter') enviarMensagem(); }
-function enviarMensagem() {
-    const texto = msgInput.value.trim();
-    if (texto === "" || salaAtual === "") return;
-    socket.emit('enviar_chat', { sala: salaAtual, texto: texto, remetente: socket.id });
-    msgInput.value = "";
-}
-
-socket.on('receber_chat', (data) => {
-    const div = document.createElement('div');
-    div.classList.add('message-bubble');
-    if (data.remetente === socket.id) {
-        div.classList.add('msg-me');
-        div.innerText = data.texto;
-    } else {
-        div.classList.add('msg-op');
-        div.innerText = data.texto;
-        tocarSom('msg');
-        if (chatSidebar.classList.contains('closed') || activeTab !== 'chat') {
-            unreadChat++;
-            badgeChat.innerText = unreadChat;
-            badgeChat.style.display = 'block';
-        }
-    }
-    chatMessages.appendChild(div);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-});
-
-socket.on('log_vida', (data) => {
-    const div = document.createElement('div'); div.classList.add('msg-log');
-    let ator = (data.remetente === socket.id) ? "VOCÊ" : "OPONENTE";
-    let alvoTexto = (data.alvo_clicado === 'me') ? (data.remetente===socket.id ? "própria vida" : "vida dele") : (data.remetente===socket.id ? "vida do oponente" : "sua vida");
-    const sinal = data.delta > 0 ? "+" : "";
-    div.innerText = `[${data.hora}] ${ator} alterou ${alvoTexto}: ${sinal}${data.delta} (Total: ${data.valor_final})`;
-    logMessages.appendChild(div);
-    logMessages.scrollTop = logMessages.scrollHeight;
-    tocarSom('msg');
-    if (chatSidebar.classList.contains('closed') || activeTab !== 'logs') {
-        unreadLogs++;
-        badgeLogs.innerText = unreadLogs;
-        badgeLogs.style.display = 'block';
-    }
-});
-
-// ======================================================
-// 9. VIDA (LÓGICA DO JOGO)
-// ======================================================
-function changeLife(target, amount) {
-    if (target === 'op') {
-        hpOp += amount; if(hpOp<0)hpOp=0; if(hpOp>40)hpOp=40; hpOpDisplay.innerText = hpOp;
-    } else if (target === 'me') {
-        hpMe += amount; if(hpMe<0)hpMe=0; if(hpMe>40)hpMe=40; hpMeDisplay.innerText = hpMe;
-    }
-    tocarSom('life');
-    if (salaAtual !== "") {
-        socket.emit('atualizar_vida', { sala: salaAtual, alvo: target, valor: (target==='me'?hpMe:hpOp), delta: amount });
-    }
-}
-socket.on('receber_vida', (data) => {
-    if (data.alvo === 'me') { hpOp = data.valor; hpOpDisplay.innerText = hpOp; }
-    else if (data.alvo === 'op') { hpMe = data.valor; hpMeDisplay.innerText = hpMe; }
-    tocarSom('life');
-});
-
-// ======================================================
-// 10. CONEXÃO E VÍDEO
-// ======================================================
-function conectarSala() {
-    if (!roomInput || roomInput.value.trim() === "") { alert("Sala?"); return; }
-    salaAtual = roomInput.value.trim();
-    socket.emit('entrar_sala', { sala: salaAtual });
-    if (loginPanel) { loginPanel.style.opacity = '0'; setTimeout(() => { loginPanel.style.display = 'none'; }, 500); }
-    if (statusOverlay) { statusOverlay.style.display = 'flex'; statusText.innerText = "CONECTANDO..."; }
-    if (myPeerId) socket.emit('aviso_peer_id', { sala: salaAtual, peerId: myPeerId });
-}
-socket.on('status_sala', (data) => { if (statusText) statusText.innerText = `CONECTADO: SALA ${salaAtual}`; });
-
-function iniciarVideoCall() {
-    peer = new Peer(undefined, { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
-    peer.on('open', (id) => { myPeerId = id; if (salaAtual !== "") socket.emit('aviso_peer_id', { sala: salaAtual, peerId: myPeerId }); });
-    peer.on('call', (call) => { call.answer(video.srcObject); call.on('stream', (st) => mostrarVideoOponente(st)); });
-}
-socket.on('novo_peer_na_sala', (data) => {
-    if (data.peerId && data.peerId !== myPeerId) { setTimeout(() => { const call = peer.call(data.peerId, video.srcObject); call.on('stream', (st) => mostrarVideoOponente(st)); }, 1000); }
-});
-function mostrarVideoOponente(stream) {
-    if (remoteVideo) { remoteVideo.srcObject = stream; remoteVideo.muted = false; isLocalMain = false; atualizarLayout(); }
-}
-
-// ======================================================
-// 11. LAYOUT E SCAN
-// ======================================================
-function atualizarLayout() {
-    if (localWrapper) localWrapper.classList.remove('video-full', 'video-pip');
-    if (remoteWrapper) remoteWrapper.classList.remove('video-full', 'video-pip');
-    if (isLocalMain) {
-        localWrapper.classList.add('video-full');
-        if (remoteVideo.srcObject && remoteWrapper) { remoteWrapper.classList.add('video-pip'); remoteWrapper.style.display = 'flex'; } else remoteWrapper.style.display = 'none';
-    } else {
-        if (remoteWrapper) { remoteWrapper.classList.add('video-full'); remoteWrapper.style.display = 'flex'; }
-        localWrapper.classList.add('video-pip');
-    }
-}
-function toggleLayout() { if (!remoteVideo.srcObject) return; isLocalMain = !isLocalMain; atualizarLayout(); }
-
-if (localWrapper) {
-    localWrapper.addEventListener('click', (e) => {
-        if (!isLocalMain) { e.stopPropagation(); toggleLayout(); return; }
-        realizarScanLocal(e.clientX, e.clientY);
+if (resultBox) {
+    resultBox.addEventListener('mousemove', (e) => {
+        if (resultImg.style.display === 'none' || resultImg.src === "") return;
+        const rect = resultBox.getBoundingClientRect();
+        const sensibilidade = 10; 
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const xPct = (x / rect.width) - 0.5;
+        const yPct = (y / rect.height) - 0.5;
+        const rotateY = xPct * sensibilidade;
+        const rotateX = yPct * -sensibilidade;
+        resultImg.style.transform = `perspective(1000px) translateZ(20px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
     });
-}
-if (remoteWrapper) {
-    remoteWrapper.addEventListener('click', (e) => {
-        if (isLocalMain) { e.stopPropagation(); toggleLayout(); return; }
-        realizarScanRemoto(e.clientX, e.clientY);
+    resultBox.addEventListener('mouseleave', () => {
+        resultImg.style.transform = `perspective(1000px) translateZ(0px) rotateX(0deg) rotateY(0deg) scale(1)`;
     });
 }
 
+function expandCard() {
+    if (resultImg.src && resultImg.src !== window.location.href && resultImg.style.display !== 'none') {
+        modalImg.src = resultImg.src;
+        cardModal.style.display = 'flex';
+    }
+}
+function closeCardModal() { cardModal.style.display = 'none'; }
+
+// ======================================================
+// 9. LÓGICA DE SCAN
+// ======================================================
 function realizarScanLocal(cx, cy) {
     uiCarregando();
     const r = video.getBoundingClientRect();
     let rx = cx - r.left, ry = cy - r.top;
-    if (isLocalRotated) { rx = r.width - rx; ry = r.height - ry; }
+    if (!isSpectator && isLocalRotated) { rx = r.width - rx; ry = r.height - ry; }
     processarCrop(video, rx, ry, video.videoWidth/r.width, video.videoHeight/r.height, false);
 }
+
 function realizarScanRemoto(cx, cy) {
-    const r = remoteVideo.getBoundingClientRect();
-    let rx = cx - r.left, ry = cy - r.top;
-    if (isRemoteRotated) { rx = r.width - rx; ry = r.height - ry; }
-    resultText.innerText = "Espionando..."; resultText.style.color = "#ff00ff"; spinner.style.display = 'block';
-    socket.emit('pedido_scan_remoto', { sala: salaAtual, x: rx/r.width, y: ry/r.height, solicitante: socket.id });
+    if (isSpectator) {
+        uiCarregando();
+        const r = remoteVideo.getBoundingClientRect();
+        let rx = cx - r.left, ry = cy - r.top;
+        processarCrop(remoteVideo, rx, ry, remoteVideo.videoWidth/r.width, remoteVideo.videoHeight/r.height, false);
+    } else {
+        const r = remoteVideo.getBoundingClientRect();
+        let rx = cx - r.left, ry = cy - r.top;
+        if (isRemoteRotated) { rx = r.width - rx; ry = r.height - ry; }
+        resultText.innerText = "Espionando..."; resultText.style.color = "#ff00ff"; spinner.style.display = 'block';
+        socket.emit('pedido_scan_remoto', { sala: salaAtual, x: rx/r.width, y: ry/r.height, solicitante: socket.id });
+    }
 }
+
 socket.on('executar_crop_local', (d) => {
     const w = video.videoWidth, h = video.videoHeight;
     let rx = d.x * w, ry = d.y * h;
@@ -354,28 +570,55 @@ socket.on('executar_crop_local', (d) => {
     ctx.drawImage(video, x, y, CROP_W, CROP_H, 0, 0, CROP_W, CROP_H);
     socket.emit('devolver_scan_remoto', { destinatario: d.solicitante, imagem: canvas.toDataURL('image/jpeg', 0.8) });
 });
+
 socket.on('receber_imagem_remota', (d) => enviarParaPython(d.imagem, true));
 socket.on('oponente_jogou', (d) => addToHistory(`[RIVAL] ${d.nome}`, d.imagem));
 
 function processarCrop(vid, rx, ry, sx, sy, spy) {
     let x = (rx*sx) - CROP_W/2, y = (ry*sy) - CROP_H/2;
-    if(x<0)x=0; if(y<0)y=0; if(x+CROP_W>vid.videoWidth)x=vid.videoWidth-CROP_W; if(y+CROP_H>vid.videoHeight)y=vid.videoHeight-CROP_H;
+    if(x<0)x=0; if(y<0)y=0; 
+    if(x+CROP_W > vid.videoWidth) x = vid.videoWidth - CROP_W; 
+    if(y+CROP_H > vid.videoHeight) y = vid.videoHeight - CROP_H;
+    
     canvas.width=CROP_W; canvas.height=CROP_H;
     ctx.drawImage(vid, x, y, CROP_W, CROP_H, 0, 0, CROP_W, CROP_H);
     enviarParaPython(canvas.toDataURL('image/jpeg', 0.9), spy);
 }
+
 function enviarParaPython(b64, spy) {
-    fetch('/identificar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({imagem:b64}) })
-    .then(r=>r.json()).then(d => {
-        spinner.style.display='none';
-        if(d.sucesso) {
+    fetch('/identificar', { 
+        method: 'POST', 
+        headers: {'Content-Type':'application/json'}, 
+        body: JSON.stringify({imagem:b64}) 
+    })
+    .then(r => {
+        if (!r.ok) throw new Error("Erro no servidor");
+        return r.json();
+    })
+    .then(d => {
+        // Se tudo deu certo
+        spinner.style.display = 'none';
+        if (d.sucesso) {
             atualizarHUD(d, spy);
-            addToHistory((spy?"👁️ ":"") + d.dados.nome, d.imagem);
+            addToHistory((spy ? "👁️ " : "") + d.dados.nome, d.imagem);
             tocarSom('scan');
-            if(!spy && salaAtual!=="") socket.emit('jogar_carta', {sala:salaAtual, nome:d.dados.nome, imagem:d.imagem, dados:d.dados});
-        } else { resultText.innerText="Falha"; resultText.style.color="#555"; }
+            if (!spy && salaAtual !== "" && !isSpectator) {
+                socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados });
+            }
+        } else {
+            resultText.innerText = "Falha";
+            resultText.style.color = "#555";
+        }
+    })
+    .catch(err => {
+        // SE DER ERRO CRÍTICO, DESTRAVA A TELA
+        console.error("Erro no scan:", err);
+        spinner.style.display = 'none';
+        resultText.innerText = "Erro Servidor";
+        resultText.style.color = "red";
     });
 }
+
 function uiCarregando() { resultText.innerText="Analisando..."; resultText.style.color="var(--ether-blue)"; resultImg.style.display="none"; spinner.style.display='block'; }
 function atualizarHUD(d, spy) {
     resultText.innerText = (spy?"[ESPIÃO] ":"") + d.dados.nome; resultText.style.color = spy?"#ff00ff":"var(--accent-gold)";
@@ -383,17 +626,48 @@ function atualizarHUD(d, spy) {
 }
 function addToHistory(n, b64) {
     const list = document.getElementById('history-list');
-    const item = document.createElement('div'); item.className='history-item';
+    
+    // --- 1. VERIFICAÇÃO DE DUPLICATAS ---
+    // Pega todos os itens atuais
+    const existingItems = list.getElementsByClassName('history-item');
+    
+    // O nome que vem do Python pode ter "👁️ " se for espião, vamos limpar para comparar
+    const cleanNameNew = n.replace('👁️ ', '').trim();
+
+    for (let i = 0; i < existingItems.length; i++) {
+        const item = existingItems[i];
+        // Pega o texto do span dentro do item
+        const textSpan = item.querySelector('span');
+        if (textSpan) {
+            const cleanNameOld = textSpan.innerText.replace('👁️ ', '').trim();
+            
+            // Se o nome for igual, remove o item antigo da lista
+            if (cleanNameOld === cleanNameNew) {
+                list.removeChild(item);
+                break; // Para o loop, pois já achamos e removemos
+            }
+        }
+    }
+
+    // --- 2. CRIA O NOVO ITEM ---
+    const item = document.createElement('div');
+    item.className = 'history-item';
     item.innerHTML = `<img src="data:image/jpeg;base64,${b64}"><span>${n}</span>`;
+    
     item.onclick = () => { 
-        resultImg.src="data:image/jpeg;base64,"+b64; 
-        resultImg.style.display='block'; 
-        resultText.innerText=n.replace(/\[.*?\] /,'').replace('👁️ ',''); 
+        resultImg.src = "data:image/jpeg;base64," + b64; 
+        resultImg.style.display = 'block'; 
+        // Remove prefixos visuais ao clicar para ver detalhes
+        resultText.innerText = n.replace(/\[.*?\] /,'').replace('👁️ ',''); 
     };
-    list.prepend(item); if(list.children.length>20)list.lastChild.remove();
+
+    // --- 3. ADICIONA NO TOPO ---
+    list.prepend(item); 
+    
+    // Limite de segurança (ex: mantém apenas as últimas 30 cartas únicas)
+    if (list.children.length > 30) list.lastChild.remove();
 }
+
 async function start() {
-    try { const s = await navigator.mediaDevices.getUserMedia({ video:{facingMode:"environment",width:{ideal:1920},height:{ideal:1080}}, audio: true }); video.srcObject=s; iniciarVideoCall(); atualizarLayout(); } 
-    catch(e) { console.error(e); alert("Erro Câmera"); }
+    // start() agora é chamado dentro de conectarSala() -> socket.on('configurar_papel')
 }
-start();
