@@ -1,77 +1,599 @@
 {
+    "abraco_da_noite.png": {
+        "nome": "Abraço da Noite"
+    },
+    "abraco_da_noite_2.png": {
+        "nome": "Abraço da Noite"
+    },
+    "acolita_do_veu_cinzento.png": {
+        "nome": "Acolita do Véu Cinzento"
+    },
+    "acordo_de_ouro.png": {
+        "nome": "Acordo de Ouro"
+    },
+    "adeus_dos_perdidos.png": {
+        "nome": "Adeus dos Perdidos"
+    },
+    "aeris.png": {
+        "nome": "Aeris"
+    },
+    "afogamento.png": {
+        "nome": "Afogamento"
+    },
+    "ambiente_das_fadas.png": {
+        "nome": "Ambiente das Fadas"
+    },
+    "aprendiz_devora_vida.png": {
+        "nome": "Aprendiz Devora-Vida"
+    },
+    "aprendiz_de_ossos.png": {
+        "nome": "Aprendiz de Ossos"
+    },
+    "aprendiz_do_luto.png": {
+        "nome": "Aprendiz do Luto"
+    },
+    "azuriel.png": {
+        "nome": "Azuriel"
+    },
+    "banquete_carmesim.png": {
+        "nome": "Banquete Carmesim"
+    },
+    "banquete_carmesim_2.png": {
+        "nome": "Banquete Carmesim"
+    },
+    "banquete_final.png": {
+        "nome": "Banquete Final"
+    },
+    "barda_harmonica.png": {
+        "nome": "Barda Harmonica"
+    },
+    "barda_da_floresta.png": {
+        "nome": "Barda da Floresta"
+    },
+    "borboleta_eteria.png": {
+        "nome": "Borboleta Etéria"
+    },
+    "bosque_antigo.png": {
+        "nome": "Bosque Antigo"
+    },
+    "brakthar.png": {
+        "nome": "Brakthar"
+    },
+    "canto_hipnotico.png": {
+        "nome": "Canto Hipnótico"
+    },
+    "caranguejo_gigante.png": {
+        "nome": "Caranguejo Gigante"
+    },
+    "carrasco_noturno.png": {
+        "nome": "Carrasco Noturno"
+    },
+    "castelo_noctivago.png": {
+        "nome": "Castelo Noctívago"
+    },
+    "castelo_notivago_3.png": {
+        "nome": "Castelo Notivago"
+    },
+    "castelo_notivago_4.png": {
+        "nome": "Castelo Notivago"
+    },
+    "castelo_de_ebano.png": {
+        "nome": "Castelo de Ébano"
+    },
+    "castelo_do_conde.png": {
+        "nome": "Castelo do Conde"
+    },
+    "castelo_do_conde_2.png": {
+        "nome": "Castelo do Conde"
+    },
+    "caverna_abissal.png": {
+        "nome": "Caverna Abissal"
+    },
+    "caverna_de_ossos.png": {
+        "nome": "Caverna de Ossos"
+    },
+    "caverna_dos_contratos.png": {
+        "nome": "Caverna dos Contratos"
+    },
+    "convocacao_rubra.png": {
+        "nome": "Convocação Rubra"
+    },
+    "corpo_seco.png": {
+        "nome": "Corpo Seco"
+    },
+    "corrente_implacavel.png": {
+        "nome": "Corrente Implacável"
+    },
+    "crianca_rubra.png": {
+        "nome": "Criança Rubra"
+    },
+    "crianca_da_mata.png": {
+        "nome": "Criança da Mata"
+    },
+    "cuca_senhora_dos_sonhos.png": {
+        "nome": "Cuca, Senhora dos Sonhos"
+    },
+    "cultista_ossifero.png": {
+        "nome": "Cultista Ossífero"
+    },
+    "cantico_das_profundezas.png": {
+        "nome": "Cântico das Profundezas"
+    },
+    "dama_do_eclipse.png": {
+        "nome": "Dama do Eclipse"
+    },
+    "descanso_elfico.png": {
+        "nome": "Descanso Élfico"
+    },
+    "dos_cem_dentes.png": {
+        "nome": "Dos Cem Dentes"
+    },
+    "dravos_sedento_da_noite.png": {
+        "nome": "Dravos, Sedento da Noite"
+    },
+    "driavelle_a_matriarca.png": {
+        "nome": "Driavelle, a Matriarca"
+    },
+    "duque_da_escuridao.png": {
+        "nome": "Duque da Escuridão"
+    },
+    "eco_do_abismo.png": {
+        "nome": "Eco do Abismo"
+    },
+    "eco_do_vazio.png": {
+        "nome": "Eco do Vazio"
+    },
+    "elfo_guardiao.png": {
+        "nome": "Elfo Guardião"
+    },
+    "elfo_novico.png": {
+        "nome": "Elfo Noviço"
+    },
+    "elisa.png": {
+        "nome": "Elisa"
+    },
+    "eryndor.png": {
+        "nome": "Eryndor"
+    },
+    "espirito_travesso.png": {
+        "nome": "Espírito Travesso"
+    },
+    "fada_aprendiz.png": {
+        "nome": "Fada Aprendiz"
+    },
+    "fada_arteira.png": {
+        "nome": "Fada Arteira"
+    },
+    "fada_brincalhona.png": {
+        "nome": "Fada Brincalhona"
+    },
+    "fada_conhecedora.png": {
+        "nome": "Fada Conhecedora"
+    },
+    "fada_curiosa.png": {
+        "nome": "Fada Curiosa"
+    },
+    "fada_encantadora.png": {
+        "nome": "Fada Encantadora"
+    },
+    "fada_radiante.png": {
+        "nome": "Fada Radiante"
+    },
+    "fada_tutora.png": {
+        "nome": "Fada Tutora"
+    },
+    "fada_da_luz.png": {
+        "nome": "Fada da Luz"
+    },
+    "fada_da_sabedoria.png": {
+        "nome": "Fada da Sabedoria"
+    },
+    "fada_das_aguas.png": {
+        "nome": "Fada das Águas"
+    },
+    "fada_do_vento.png": {
+        "nome": "Fada do Vento"
+    },
+    "filha_da_nevoa.png": {
+        "nome": "Filha da Nevoa"
+    },
+    "floresta_dos_rugidos.png": {
+        "nome": "Floresta dos Rugidos"
+    },
+    "fome.png": {
+        "nome": "Fome"
+    },
+    "fome_eterna.png": {
+        "nome": "Fome Eterna"
+    },
+    "goblin_acumulador.png": {
+        "nome": "Goblin Acumulador"
+    },
+    "goblin_avarento.png": {
+        "nome": "Goblin Avarento"
+    },
+    "goblin_cambista.png": {
+        "nome": "Goblin Cambista"
+    },
+    "goblin_cobrador.png": {
+        "nome": "Goblin Cobrador"
+    },
+    "goblin_cobrador_de_almas.png": {
+        "nome": "Goblin Cobrador de Almas"
+    },
+    "goblin_contrabandista.png": {
+        "nome": "Goblin Contrabandista"
+    },
+    "goblin_fundidor.png": {
+        "nome": "Goblin Fundidor"
+    },
+    "goblin_mercadora.png": {
+        "nome": "Goblin Mercadora"
+    },
+    "goblin_minerador.png": {
+        "nome": "Goblin Minerador"
+    },
+    "goblin_trapaceira.png": {
+        "nome": "Goblin Trapaceira"
+    },
+    "gruk.png": {
+        "nome": "Gruk"
+    },
+    "guardia_do_alvorecer.png": {
+        "nome": "Guardia do Alvorecer"
+    },
+    "guardiao_coralino.png": {
+        "nome": "Guardião Coralino"
+    },
+    "guardiao_escarlate.png": {
+        "nome": "Guardião Escarlate"
+    },
+    "guardiao_das_correntes.png": {
+        "nome": "Guardião das Correntes"
+    },
+    "guardiao_de_ossos.png": {
+        "nome": "Guardião de Ossos"
+    },
+    "iara_das_profundezas.png": {
+        "nome": "Iara das Profundezas"
+    },
+    "ilusionista_oceanica.png": {
+        "nome": "Ilusionista Oceânica"
+    },
+    "inceccao_em_ithar.png": {
+        "nome": "Incecção em Ithar"
+    },
+    "infante_sombrio.png": {
+        "nome": "Infante Sombrio"
+    },
+    "irradis.png": {
+        "nome": "Irradis"
+    },
+    "irradis_dona_da_beleza.png": {
+        "nome": "Irradis Dona da Beleza"
+    },
+    "kael_silencioso.png": {
+        "nome": "Kael Silencioso"
+    },
+    "kaelthas.png": {
+        "nome": "Kaelthas"
+    },
+    "kamilla_dama_do_fim.png": {
+        "nome": "Kamilla, Dama do Fim"
+    },
+    "kaz.png": {
+        "nome": "Kaz"
+    },
+    "kaz_mestre_dos_mil_ossos.png": {
+        "nome": "Kaz, Mestre dos Mil Ossos"
+    },
+    "korn.png": {
+        "nome": "Korn"
+    },
+    "korn_filho_da_noite.png": {
+        "nome": "Korn Filho da Noite"
+    },
+    "krogg.png": {
+        "nome": "Krogg"
+    },
+    "lacaio_noctivago.png": {
+        "nome": "Lacaio Noctívago"
+    },
+    "leviata.png": {
+        "nome": "Leviata"
+    },
+    "lyrel.png": {
+        "nome": "Lyrel"
+    },
+    "lyssandra.png": {
+        "nome": "Lyssandra"
+    },
+    "malakar_trono_de_ossos.png": {
+        "nome": "Malakar Trono de Ossos"
+    },
+    "mare.png": {
+        "nome": "Maré"
+    },
+    "marionetes_de_pano.png": {
+        "nome": "Marionetes de Pano"
+    },
+    "mercado_do_covil.png": {
+        "nome": "Mercado do Covil"
+    },
+    "mina_do_ether.png": {
+        "nome": "Mina do Éther"
+    },
+    "mirelia.png": {
+        "nome": "Mirélia"
+    },
+    "mirelia_olhos_de_cristal.png": {
+        "nome": "Mirélia, Olhos de Cristal"
+    },
+    "mistral.png": {
+        "nome": "Mistral"
+    },
+    "mograk.png": {
+        "nome": "Mograk"
+    },
+    "monstro_das_profundezas.png": {
+        "nome": "Monstro das Profundezas"
+    },
+    "muskkys_esuriente.png": {
+        "nome": "Muskkys Esuriente"
+    },
+    "muskkys_guardiao_arsenio.png": {
+        "nome": "Muskkys, Guardião Arsênio"
+    },
+    "naia.png": {
+        "nome": "Naia"
+    },
+    "naia_estrela_das_aguas.png": {
+        "nome": "Naia, Estrela das Águas"
+    },
+    "naiara.png": {
+        "nome": "Naiara"
+    },
+    "negocio_de_fachada.png": {
+        "nome": "Negócio de Fachada"
+    },
+    "noite_sem_fim.png": {
+        "nome": "Noite sem Fim"
+    },
+    "novico_da_tumba_vazia.png": {
+        "nome": "Noviço da Tumba Vazia"
+    },
+    "nerida.png": {
+        "nome": "Nérida"
+    },
+    "o_retorno.png": {
+        "nome": "O Retorno"
+    },
+    "o_retorno_2.png": {
+        "nome": "O Retorno"
+    },
+    "ogro_aprendiz.png": {
+        "nome": "Ogro Aprendiz"
+    },
+    "ogro_acougueiro.png": {
+        "nome": "Ogro Açougueiro"
+    },
+    "ogro_mouco.png": {
+        "nome": "Ogro Mouco"
+    },
+    "ogro_vigia.png": {
+        "nome": "Ogro Vigia"
+    },
+    "ogro_da_garganta_seca.png": {
+        "nome": "Ogro da Garganta Seca"
+    },
+    "ogro_da_penumbra.png": {
+        "nome": "Ogro da Penumbra"
+    },
+    "ogro_da_taverna.png": {
+        "nome": "Ogro da Taverna"
+    },
+    "ogro_dos_cranios.png": {
+        "nome": "Ogro dos Crânios"
+    },
+    "ossos.png": {
+        "nome": "Ossos"
+    },
+    "ossario_subterraneo.png": {
+        "nome": "Ossário Subterrâneo"
+    },
+    "ossario_da_perdicao.png": {
+        "nome": "Ossário da Perdição"
+    },
+    "otto.png": {
+        "nome": "Otto"
+    },
+    "pantano_sussurrante.png": {
+        "nome": "Pantano Sussurrante"
+    },
+    "pep.png": {
+        "nome": "Pep"
+    },
+    "protetora_da_manha.png": {
+        "nome": "Protetora da Manhã"
+    },
+    "protecao_nascente.png": {
+        "nome": "Proteção Nascente"
+    },
+    "rajada_de_folhas.png": {
+        "nome": "Rajada de Folhas"
+    },
     "rastejante_rubro.png": {
-        "nome": "Rastejante Rubro",
+        "nome": "Rastejante Rubro"
     },
-    "pep_fada_da_confusão.png": {
-        "nome": "Pep, Fada da Confusão",
+    "recuperacao_ossea.png": {
+        "nome": "Recuperação Óssea"
     },
-    "castelo_ebano.png": {
-        "nome": "Castelo de Ébano",
+    "repouso_das_matriarcas.png": {
+        "nome": "Repouso das Matriarcas"
     },
-    "crianca_rubra.jpg": {
-        "nome": "Criança Rubra",
+    "retorno_injusto.png": {
+        "nome": "Retorno Injusto"
     },
-    "castelo_notivago.jpg": {
-        "nome": "Castelo Notívago",
+    "riveli.png": {
+        "nome": "Riveli"
     },
-    "bosque_antigo.jpg": {
-        "nome": "Bosque Antigo",
+    "riveli_rei_dos_mares.png": {
+        "nome": "Riveli, Rei dos Marés"
     },
-    "castelo_ebano.jpg": {
-        "nome": "Castelo de Ébano",
+    "ruinas_da_floresta.png": {
+        "nome": "Ruínas da Floresta"
     },
-    "ambiente_das_fadas.jpg": {
-        "nome": "Ambiente das Fadas",
+    "sabrina.png": {
+        "nome": "Sabrina"
     },
-    "borboleta_eteria.jpg": {
-        "nome": "Borboleta Etéria",
+    "sacerdotisa_rubra.png": {
+        "nome": "Sacerdotisa Rubra"
     },
-    "banho_de_sangue.jpg": {
-        "nome": "Banho de Sangue",
+    "selene.png": {
+        "nome": "Selene"
     },
-    "convocacao_rubra.jpg": {
-        "nome": "Convocação Rubra",
+    "sereia_curandeira.png": {
+        "nome": "Sereia Curandeira"
     },
-    "castelo_notivado_2.jpg": {
-        "nome": "Castelo Notívago",
+    "sereia_encantada.png": {
+        "nome": "Sereia Encantada"
     },
-    "aeris_pluma_celeste.jpg": {
-        "nome": "Aeris, Pluma Celeste",
+    "sereia_tentadora.png": {
+        "nome": "Sereia Tentadora"
     },
-    "pep_fada_da_confusao.jpg": {
-        "nome": "Pep, Fada da Confusão",
+    "sereia_da_nevoa.png": {
+        "nome": "Sereia da Névoa"
     },
-    "livro_1.jpg": {
-        "nome": "Livro",
+    "serpente_de_brasa.png": {
+        "nome": "Serpente de Brasa"
     },
-    "sacerdotisa_rubra.jpg": {
-        "nome": "Sacerdotisa Rubra",
+    "servo_ossifero.png": {
+        "nome": "Servo Ossífero"
     },
-    "vampiro_da_penunbra.jpg": {
-        "nome": "Vampiro da Penumbra",
+    "servo_da_lua_palida.png": {
+        "nome": "Servo da Lua Pálida"
     },
-    "sangue_1.jpg": {
-        "nome": "Sangue",
+    "solira.png": {
+        "nome": "Solira"
     },
-    "sombrio_do_banquete.jpg": {
-        "nome": "Sombrio do Banquete",
+    "sombrio_do_banquete.png": {
+        "nome": "Sombrio do Banquete"
     },
-    "solira_brilho_da_manha.jpg": {
-        "nome": "Solira, Brilho da Manhã",
+    "sussuro_da_floresta.png": {
+        "nome": "Sussuro da Floresta"
     },
-    "pep_fada_da_confusão.jpg": {
-        "nome": "Pep, Fada da Confusão",
+    "syrene.png": {
+        "nome": "Syrene"
     },
-    "sangue_2.jpg": {
-        "nome": "Sangue",
+    "thalassa.png": {
+        "nome": "Thalassa"
     },
-    "serpente_de_brasa.jpg": {
-        "nome": "Serpente de Brasa",
+    "tifa.png": {
+        "nome": "Tifa"
     },
-    "torre_de_cristal.jpg": {
-        "nome": "Torre de Cristal",
+    "tiriel.png": {
+        "nome": "Tiriel"
     },
-    "vorth_deusa_da_alvorada.jpg": {
-        "nome": "Vorth, Deusa da Alvorada",
+    "tivia.png": {
+        "nome": "Tivia"
+    },
+    "torre_de_cristal.png": {
+        "nome": "Torre de Cristal"
+    },
+    "tridente.png": {
+        "nome": "Tridente"
+    },
+    "tritao_aprendiz.png": {
+        "nome": "Tritão Aprendiz"
+    },
+    "tritao_campeao.png": {
+        "nome": "Tritão Campeão"
+    },
+    "tritao_guerreiro.png": {
+        "nome": "Tritão Guerreiro"
+    },
+    "tritao_vigia.png": {
+        "nome": "Tritão Vigia"
+    },
+    "tumba_nautica.png": {
+        "nome": "Tumba Náutica"
+    },
+    "tumbas_antigas.png": {
+        "nome": "Tumbas Antigas"
+    },
+    "turno_submerso.png": {
+        "nome": "Turno Submerso"
+    },
+    "vampira_servical.png": {
+        "nome": "Vampira Serviçal"
+    },
+    "vampiro_aristocrata.png": {
+        "nome": "Vampiro Aristocrata"
+    },
+    "vampiro_carrasco.png": {
+        "nome": "Vampiro Carrasco"
+    },
+    "vampiro_cacador.png": {
+        "nome": "Vampiro Caçador"
+    },
+    "vampiro_devoto.png": {
+        "nome": "Vampiro Devoto"
+    },
+    "vampiro_noturno.png": {
+        "nome": "Vampiro Noturno"
+    },
+    "vampiro_servical.png": {
+        "nome": "Vampiro Serviçal"
+    },
+    "vampiro_sicario.png": {
+        "nome": "Vampiro Sicário"
+    },
+    "vampiro_sudito.png": {
+        "nome": "Vampiro Súdito"
+    },
+    "vampiro_sudito_da_corte.png": {
+        "nome": "Vampiro Súdito da Corte"
+    },
+    "vampiro_da_penumbra.png": {
+        "nome": "Vampiro da Penumbra"
+    },
+    "vampiro_das_tumbas.png": {
+        "nome": "Vampiro das Tumbas"
+    },
+    "vampiro_de_konal.png": {
+        "nome": "Vampiro de Konal"
+    },
+    "vera.png": {
+        "nome": "Vera"
+    },
+    "viajante_do_ether.png": {
+        "nome": "Viajante do Ether"
+    },
+    "vitoria_regia.png": {
+        "nome": "Vitória-Régia"
+    },
+    "vorth.png": {
+        "nome": "Vorth"
+    },
+    "vorth_deusa_da_alvorada.png": {
+        "nome": "Vorth, Deusa da Alvorada"
+    },
+    "yra_a_mae_escarlate.png": {
+        "nome": "Yra, A Mãe Escarlate"
+    },
+    "zagath_senhor_das_fortunas.png": {
+        "nome": "Zagath, Senhor das Fortunas"
+    },
+    "zau.png": {
+        "nome": "Zau"
+    },
+    "zoa.png": {
+        "nome": "Zoa"
+    },
+    "zrak.png": {
+        "nome": "Zrak"
+    },
+    "arvore_da_sabedoria.png": {
+        "nome": "Árvore da Sabedoria"
     }
 }
