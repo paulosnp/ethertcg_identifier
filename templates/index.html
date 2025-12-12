@@ -45,8 +45,7 @@
                 </div>
             </div>
             <div class="logo-area">
-                <h1>ETHER</h1>
-                <p>SCANNER</p>
+                <img src="{{ url_for('static', filename='logo-ether.svg') }}" alt="ETHER Logo" class="main-logo">
             </div>
             <div class="life-counter">
                 <span class="hp-label me-label">VOCÊ</span>
@@ -88,7 +87,7 @@
                 <div class="setting-item">
                     <span>Efeitos Sonoros</span>
                     <label class="switch">
-                        <input type="checkbox" id="chkSound" checked onchange="toggleSoundSetting()">
+                        <input type="checkbox" id="chkSound" onchange="toggleSoundSetting()">
                         <span class="slider round"></span>
                     </label>
                 </div>

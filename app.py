@@ -271,4 +271,11 @@ def identificar():
         return jsonify({'sucesso': False})
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    # Verifica se os arquivos de segurança existem
+    if os.path.exists('key.pem') and os.path.exists('cert.pem'):
+        print("--- Rodando com HTTPS (Modo Seguro - VPS) ---")
+        socketio.run(app, debug=True, host='0.0.0.0', port=5000, keyfile='key.pem', certfile='cert.pem')
+    else:
+        print("--- Rodando com HTTP (Modo Local - Windows) ---")
+        # Roda sem chaves de segurança
+        socketio.run(app, debug=True, host='0.0.0.0', port=5000)

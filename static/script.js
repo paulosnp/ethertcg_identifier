@@ -76,14 +76,38 @@ let hpOp = 20;
 let hpMe = 20;
 
 let activeTab = 'chat';
-let isSoundOn = true;
-let shareAudioWithSpecs = false; // Config do Jogador
+let isSoundOn = false; // Som desligado por padrão
+let shareAudioWithSpecs = false;
 
-let isSpectator = false; // Definido pelo servidor
+let isSpectator = false;
 let spectatorSlots = 0;
+let localStreamGlobal = null; // Variável para guardar a câmera inicial
 
 // ======================================================
-// 3. UI, SONS E CONFIGURAÇÕES
+// 3. INICIALIZAÇÃO (CÂMERA IMEDIATA)
+// ======================================================
+async function iniciarCameraGlobal() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, 
+            audio: true 
+        });
+        
+        video.srcObject = stream;
+        video.muted = true; // Mudo localmente para não dar eco
+        localStreamGlobal = stream; // Guarda para usar depois
+        console.log("Câmera iniciada com sucesso!");
+    } catch (e) {
+        console.error("Erro ao acessar câmera:", e);
+        alert("Por favor, permita o acesso à câmera para jogar.");
+    }
+}
+
+// CHAMA A CÂMERA ASSIM QUE O SITE CARREGA
+iniciarCameraGlobal();
+
+// ======================================================
+// 4. UI, SONS E CONFIGURAÇÕES
 // ======================================================
 function tocarSom(tipo) {
     if (!isSoundOn) return;
@@ -101,11 +125,8 @@ function tocarSom(tipo) {
 }
 
 function toggleSettings() {
-    if (settingsPopup.style.display === 'block') {
-        settingsPopup.style.display = 'none';
-    } else {
-        settingsPopup.style.display = 'block';
-    }
+    if (settingsPopup.style.display === 'block') settingsPopup.style.display = 'none';
+    else settingsPopup.style.display = 'block';
 }
 
 window.onclick = function(event) {
@@ -114,13 +135,8 @@ window.onclick = function(event) {
     }
 }
 
-function toggleSoundSetting() {
-    isSoundOn = document.getElementById('chkSound').checked;
-}
-
-function toggleShareAudio() {
-    shareAudioWithSpecs = document.getElementById('chkShareAudio').checked;
-}
+function toggleSoundSetting() { isSoundOn = document.getElementById('chkSound').checked; }
+function toggleShareAudio() { shareAudioWithSpecs = document.getElementById('chkShareAudio').checked; }
 
 function switchTab(tabName) {
     activeTab = tabName;
@@ -141,14 +157,11 @@ function switchTab(tabName) {
     else if (tabName === 'logs') logsContainer.style.display = 'flex';
 
     const badge = document.getElementById('badge-' + tabName);
-    if (badge) {
-        badge.innerText = '0';
-        badge.style.display = 'none';
-    }
+    if (badge) { badge.innerText = '0'; badge.style.display = 'none'; }
 }
 
 // ======================================================
-// 4. LOGIN E DEFINIÇÃO DE PAPEL
+// 5. LOGIN E DEFINIÇÃO DE PAPEL
 // ======================================================
 function conectarSala() {
     if (!roomInput || roomInput.value.trim() === "") { alert("Digite a Sala!"); return; }
@@ -164,24 +177,27 @@ socket.on('configurar_papel', (data) => {
     isSpectator = (data.role === 'spectator');
     console.log("Entrei na sala como:", data.role);
     
+    // MOSTRAR O CHAT AGORA QUE ENTROU
+    if (chatToggleBtn) chatToggleBtn.style.display = 'flex';
+    if (chatSidebar) chatSidebar.style.display = 'flex';
+
     if (isSpectator) {
         setupSpectatorMode();
+        // Se for espectador, paramos a câmera local para economizar recurso
+        if (localStreamGlobal) {
+            localStreamGlobal.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+        }
         iniciarPeer(null); 
     } else {
         setupPlayerMode();
-        navigator.mediaDevices.getUserMedia({ 
-            video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, 
-            audio: true 
-        })
-        .then(stream => {
-            video.srcObject = stream;
-            video.muted = true; 
-            iniciarPeer(stream);
-        })
-        .catch(e => {
-            console.error(e);
-            alert("Erro ao acessar câmera/microfone.");
-        });
+        // Se for jogador, usamos a câmera que JÁ ESTÁ LIGADA
+        if (localStreamGlobal) {
+            iniciarPeer(localStreamGlobal);
+        } else {
+            // Caso raro: câmera falhou no inicio, tenta de novo
+            iniciarCameraGlobal().then(() => iniciarPeer(localStreamGlobal));
+        }
     }
 });
 
@@ -193,23 +209,17 @@ function setupPlayerMode() {
 function setupSpectatorMode() {
     statusText.innerText = `ESPECTADOR - SALA ${salaAtual}`;
     
-    // Layout Vertical
     container.classList.add('spectator-view');
     labelLocal.innerText = "JOGADOR 1";
     labelRemote.innerText = "JOGADOR 2";
     
-    // Esconde controles que espectador não usa
     document.querySelector('.local-controls').style.display = 'none';
     document.querySelector('.remote-controls').style.display = 'none';
     btnMute.style.display = 'none';
     document.getElementById('opt-share-audio').style.display = 'none';
 
-    // --- NOVO: ESCONDE BOTÕES DE VIDA (+/-) ---
-    document.querySelectorAll('.hp-controls button').forEach(btn => {
-        btn.style.display = 'none';
-    });
+    document.querySelectorAll('.hp-controls button').forEach(btn => btn.style.display = 'none');
 
-    // Bloqueia Chat de Duelo e mostra aviso
     document.getElementById('input-duel').style.display = 'none';
     document.getElementById('spectator-blocked-msg').style.display = 'block';
     
@@ -217,10 +227,8 @@ function setupSpectatorMode() {
     switchTab('spec');
 }
 
-// ATUALIZAÇÃO DA CONTAGEM DE ESPECTADORES
 socket.on('update_specs_count', (data) => {
     const count = data.count;
-    
     if (specCountVal) specCountVal.innerText = count;
     
     if (count > 0) {
@@ -238,34 +246,26 @@ socket.on('update_specs_count', (data) => {
 });
 
 // ======================================================
-// 5. PEERJS E ÁUDIO
+// 6. PEERJS E ÁUDIO
 // ======================================================
 function iniciarPeer(myStream) {
     peer = new Peer(undefined, { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
     
     peer.on('open', (id) => {
         myPeerId = id;
-        socket.emit('aviso_peer_id', { 
-            sala: salaAtual, 
-            peerId: myPeerId, 
-            role: (isSpectator ? 'spec' : 'player') 
-        });
+        socket.emit('aviso_peer_id', { sala: salaAtual, peerId: myPeerId, role: (isSpectator ? 'spec' : 'player') });
     });
 
     peer.on('call', (call) => {
         if (!isSpectator) {
             let streamToSend = myStream;
-            
             if (!shareAudioWithSpecs && call.metadata && call.metadata.role === 'spec') {
                 const videoTracks = myStream.getVideoTracks();
-                if (videoTracks.length > 0) {
-                    streamToSend = new MediaStream([videoTracks[0]]);
-                }
+                if (videoTracks.length > 0) streamToSend = new MediaStream([videoTracks[0]]);
             } else if (!shareAudioWithSpecs) {
                  const videoTracks = myStream.getVideoTracks();
                  if(videoTracks.length > 0) streamToSend = new MediaStream([videoTracks[0]]);
             }
-            
             call.answer(streamToSend);
             call.on('stream', (rs) => mostrarVideoOponente(rs));
         } else {
@@ -284,12 +284,10 @@ socket.on('novo_peer_na_sala', (data) => {
             call.on('stream', (rs) => mostrarVideoOponente(rs));
         } else {
             let streamToSend = video.srcObject;
-            
             if (!shareAudioWithSpecs) {
                 const vt = video.srcObject.getVideoTracks();
                 if (vt.length > 0) streamToSend = new MediaStream([vt[0]]);
             }
-            
             peer.call(data.peerId, streamToSend, { metadata: { role: 'player' } });
         }
     }
@@ -318,7 +316,7 @@ function handleSpectatorStream(stream) {
 }
 
 // ======================================================
-// 6. CHATS (DUELO E SPEC)
+// 7. CHATS
 // ======================================================
 function handleChatKey(e, tipo) { if (e.key === 'Enter') enviarMensagem(tipo); }
 
@@ -326,7 +324,6 @@ function enviarMensagem(tipo) {
     const input = (tipo === 'duel') ? msgInput : msgSpecInput;
     const texto = input.value.trim();
     if (texto === "" || salaAtual === "") return;
-    
     socket.emit('enviar_chat', { sala: salaAtual, texto: texto, remetente: socket.id, tipo: tipo });
     input.value = "";
 }
@@ -334,16 +331,8 @@ function enviarMensagem(tipo) {
 socket.on('receber_chat', (data) => {
     if (data.tipo === 'duel' && isSpectator) return;
 
-    let targetDiv = null;
-    let targetTab = '';
-
-    if (data.tipo === 'duel') {
-        targetDiv = chatMessages;
-        targetTab = 'chat';
-    } else {
-        targetDiv = specMessages;
-        targetTab = 'spec';
-    }
+    let targetDiv = (data.tipo === 'duel') ? chatMessages : specMessages;
+    let targetTab = (data.tipo === 'duel') ? 'chat' : 'spec';
 
     const div = document.createElement('div');
     div.classList.add('message-bubble');
@@ -354,9 +343,7 @@ socket.on('receber_chat', (data) => {
     } else {
         div.classList.add('msg-op');
         div.innerText = (data.tipo === 'spec' ? "[Spec] " : "") + data.texto;
-        
         tocarSom('msg');
-        
         if (chatSidebar.classList.contains('closed') || activeTab !== targetTab) {
             const badge = document.getElementById('badge-' + targetTab);
             if (badge) {
@@ -371,20 +358,14 @@ socket.on('receber_chat', (data) => {
 });
 
 socket.on('log_vida', (data) => {
-    const div = document.createElement('div'); 
-    div.classList.add('msg-log');
-    
+    const div = document.createElement('div'); div.classList.add('msg-log');
     let ator = (data.remetente === socket.id) ? "VOCÊ" : "OPONENTE";
     if (isSpectator) ator = "JOGADOR"; 
-
     const sinal = data.delta > 0 ? "+" : "";
     div.innerText = `[${data.hora}] ${ator} alterou vida: ${sinal}${data.delta} (Total: ${data.valor_final})`;
-    
     logMessages.appendChild(div);
     logMessages.scrollTop = logMessages.scrollHeight;
-
     tocarSom('msg');
-
     if (chatSidebar.classList.contains('closed') || activeTab !== 'logs') {
         const badge = document.getElementById('badge-logs');
         let count = parseInt(badge.innerText || '0') + 1;
@@ -394,22 +375,15 @@ socket.on('log_vida', (data) => {
 });
 
 // ======================================================
-// 7. VIDA (LÓGICA)
+// 8. VIDA
 // ======================================================
 function changeLife(target, amount) {
     if (isSpectator) return; 
-
-    if (target === 'op') {
-        hpOp += amount; if(hpOp<0)hpOp=0; if(hpOp>40)hpOp=40; hpOpDisplay.innerText = hpOp;
-    } else if (target === 'me') {
-        hpMe += amount; if(hpMe<0)hpMe=0; if(hpMe>40)hpMe=40; hpMeDisplay.innerText = hpMe;
-    }
+    if (target === 'op') { hpOp += amount; if(hpOp<0)hpOp=0; if(hpOp>40)hpOp=40; hpOpDisplay.innerText = hpOp; } 
+    else if (target === 'me') { hpMe += amount; if(hpMe<0)hpMe=0; if(hpMe>40)hpMe=40; hpMeDisplay.innerText = hpMe; }
     tocarSom('life');
-    if (salaAtual !== "") {
-        socket.emit('atualizar_vida', { sala: salaAtual, alvo: target, valor: (target==='me'?hpMe:hpOp), delta: amount });
-    }
+    if (salaAtual !== "") { socket.emit('atualizar_vida', { sala: salaAtual, alvo: target, valor: (target==='me'?hpMe:hpOp), delta: amount }); }
 }
-
 socket.on('receber_vida', (data) => {
     if (!isSpectator) {
         if (data.alvo === 'me') { hpOp = data.valor; hpOpDisplay.innerText = hpOp; }
@@ -419,50 +393,23 @@ socket.on('receber_vida', (data) => {
 });
 
 // ======================================================
-// 8. LAYOUT, CARTA E OUTROS
+// 9. LAYOUT E INTERAÇÃO
 // ======================================================
 function atualizarLayout() {
     if (isSpectator) return; 
-
     if (localWrapper) localWrapper.classList.remove('video-full', 'video-pip');
     if (remoteWrapper) remoteWrapper.classList.remove('video-full', 'video-pip');
-    
     if (isLocalMain) {
         localWrapper.classList.add('video-full');
-        if (remoteVideo.srcObject && remoteWrapper) { 
-            remoteWrapper.classList.add('video-pip'); 
-            remoteWrapper.style.display = 'flex'; 
-        } else {
-            remoteWrapper.style.display = 'none';
-        }
+        if (remoteVideo.srcObject && remoteWrapper) { remoteWrapper.classList.add('video-pip'); remoteWrapper.style.display = 'flex'; } else { remoteWrapper.style.display = 'none'; }
     } else {
-        if (remoteWrapper) { 
-            remoteWrapper.classList.add('video-full'); 
-            remoteWrapper.style.display = 'flex'; 
-        }
+        if (remoteWrapper) { remoteWrapper.classList.add('video-full'); remoteWrapper.style.display = 'flex'; }
         localWrapper.classList.add('video-pip');
     }
 }
-
-function toggleLayout() { 
-    if (isSpectator) return;
-    if (!remoteVideo.srcObject) return; 
-    isLocalMain = !isLocalMain; 
-    atualizarLayout(); 
-}
-
-if (localWrapper) {
-    localWrapper.addEventListener('click', (e) => {
-        if (!isLocalMain && !isSpectator) { e.stopPropagation(); toggleLayout(); return; }
-        realizarScanLocal(e.clientX, e.clientY);
-    });
-}
-if (remoteWrapper) {
-    remoteWrapper.addEventListener('click', (e) => {
-        if (isLocalMain && !isSpectator) { e.stopPropagation(); toggleLayout(); return; }
-        realizarScanRemoto(e.clientX, e.clientY);
-    });
-}
+function toggleLayout() { if (isSpectator) return; if (!remoteVideo.srcObject) return; isLocalMain = !isLocalMain; atualizarLayout(); }
+if (localWrapper) localWrapper.addEventListener('click', (e) => { if (!isLocalMain && !isSpectator) { e.stopPropagation(); toggleLayout(); return; } realizarScanLocal(e.clientX, e.clientY); });
+if (remoteWrapper) remoteWrapper.addEventListener('click', (e) => { if (isLocalMain && !isSpectator) { e.stopPropagation(); toggleLayout(); return; } realizarScanRemoto(e.clientX, e.clientY); });
 
 if (sidebarToggleBtn && mainSidebar) {
     sidebarToggleBtn.addEventListener('click', () => {
@@ -476,67 +423,35 @@ if (chatToggleBtn && chatSidebar) {
         chatSidebar.classList.toggle('closed');
         chatToggleBtn.classList.toggle('closed');
         chatToggleBtn.innerHTML = chatSidebar.classList.contains('closed') ? "&lt;" : "&gt;";
-        if (!chatSidebar.classList.contains('closed')) {
-            const badge = document.getElementById('badge-' + activeTab);
-            if(badge) { badge.innerText='0'; badge.style.display='none'; }
-        }
+        if (!chatSidebar.classList.contains('closed')) { const badge = document.getElementById('badge-' + activeTab); if(badge) { badge.innerText='0'; badge.style.display='none'; } }
     });
 }
 
 function toggleRotation(event, target) {
     event.stopPropagation(); 
-    if (target === 'local') {
-        isLocalRotated = !isLocalRotated;
-        video.classList.toggle('rotated', isLocalRotated);
-    } else if (target === 'remote') {
-        isRemoteRotated = !isRemoteRotated;
-        remoteVideo.classList.toggle('rotated', isRemoteRotated);
-    }
+    if (target === 'local') { isLocalRotated = !isLocalRotated; video.classList.toggle('rotated', isLocalRotated); } 
+    else if (target === 'remote') { isRemoteRotated = !isRemoteRotated; remoteVideo.classList.toggle('rotated', isRemoteRotated); }
 }
-
 function toggleMute(event) {
-    event.stopPropagation();
-    if (isSpectator) return;
-
+    event.stopPropagation(); if (isSpectator) return;
     const audioTrack = video.srcObject.getAudioTracks()[0];
-    if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled; 
-        if (audioTrack.enabled) {
-            btnMute.innerHTML = "🎤"; btnMute.classList.remove('muted');
-        } else {
-            btnMute.innerHTML = "🔇"; btnMute.classList.add('muted');
-        }
-    }
+    if (audioTrack) { audioTrack.enabled = !audioTrack.enabled; if (audioTrack.enabled) { btnMute.innerHTML = "🎤"; btnMute.classList.remove('muted'); } else { btnMute.innerHTML = "🔇"; btnMute.classList.add('muted'); } }
 }
-
 if (resultBox) {
     resultBox.addEventListener('mousemove', (e) => {
         if (resultImg.style.display === 'none' || resultImg.src === "") return;
         const rect = resultBox.getBoundingClientRect();
-        const sensibilidade = 10; 
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const xPct = (x / rect.width) - 0.5;
-        const yPct = (y / rect.height) - 0.5;
-        const rotateY = xPct * sensibilidade;
-        const rotateX = yPct * -sensibilidade;
-        resultImg.style.transform = `perspective(1000px) translateZ(20px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+        const xPct = ((e.clientX - rect.left) / rect.width) - 0.5;
+        const yPct = ((e.clientY - rect.top) / rect.height) - 0.5;
+        resultImg.style.transform = `perspective(1000px) translateZ(20px) rotateX(${yPct * -10}deg) rotateY(${xPct * 10}deg) scale(1.02)`;
     });
-    resultBox.addEventListener('mouseleave', () => {
-        resultImg.style.transform = `perspective(1000px) translateZ(0px) rotateX(0deg) rotateY(0deg) scale(1)`;
-    });
+    resultBox.addEventListener('mouseleave', () => { resultImg.style.transform = `perspective(1000px) translateZ(0px) rotateX(0deg) rotateY(0deg) scale(1)`; });
 }
-
-function expandCard() {
-    if (resultImg.src && resultImg.src !== window.location.href && resultImg.style.display !== 'none') {
-        modalImg.src = resultImg.src;
-        cardModal.style.display = 'flex';
-    }
-}
+function expandCard() { if (resultImg.src && resultImg.src !== window.location.href && resultImg.style.display !== 'none') { modalImg.src = resultImg.src; cardModal.style.display = 'flex'; } }
 function closeCardModal() { cardModal.style.display = 'none'; }
 
 // ======================================================
-// 9. LÓGICA DE SCAN
+// 10. LÓGICA DE SCAN E FETCH
 // ======================================================
 function realizarScanLocal(cx, cy) {
     uiCarregando();
@@ -545,7 +460,6 @@ function realizarScanLocal(cx, cy) {
     if (!isSpectator && isLocalRotated) { rx = r.width - rx; ry = r.height - ry; }
     processarCrop(video, rx, ry, video.videoWidth/r.width, video.videoHeight/r.height, false);
 }
-
 function realizarScanRemoto(cx, cy) {
     if (isSpectator) {
         uiCarregando();
@@ -560,7 +474,6 @@ function realizarScanRemoto(cx, cy) {
         socket.emit('pedido_scan_remoto', { sala: salaAtual, x: rx/r.width, y: ry/r.height, solicitante: socket.id });
     }
 }
-
 socket.on('executar_crop_local', (d) => {
     const w = video.videoWidth, h = video.videoHeight;
     let rx = d.x * w, ry = d.y * h;
@@ -570,104 +483,46 @@ socket.on('executar_crop_local', (d) => {
     ctx.drawImage(video, x, y, CROP_W, CROP_H, 0, 0, CROP_W, CROP_H);
     socket.emit('devolver_scan_remoto', { destinatario: d.solicitante, imagem: canvas.toDataURL('image/jpeg', 0.8) });
 });
-
 socket.on('receber_imagem_remota', (d) => enviarParaPython(d.imagem, true));
 socket.on('oponente_jogou', (d) => addToHistory(`[RIVAL] ${d.nome}`, d.imagem));
 
 function processarCrop(vid, rx, ry, sx, sy, spy) {
     let x = (rx*sx) - CROP_W/2, y = (ry*sy) - CROP_H/2;
-    if(x<0)x=0; if(y<0)y=0; 
-    if(x+CROP_W > vid.videoWidth) x = vid.videoWidth - CROP_W; 
-    if(y+CROP_H > vid.videoHeight) y = vid.videoHeight - CROP_H;
-    
+    if(x<0)x=0; if(y<0)y=0; if(x+CROP_W > vid.videoWidth) x = vid.videoWidth - CROP_W; if(y+CROP_H > vid.videoHeight) y = vid.videoHeight - CROP_H;
     canvas.width=CROP_W; canvas.height=CROP_H;
     ctx.drawImage(vid, x, y, CROP_W, CROP_H, 0, 0, CROP_W, CROP_H);
     enviarParaPython(canvas.toDataURL('image/jpeg', 0.9), spy);
 }
 
 function enviarParaPython(b64, spy) {
-    fetch('/identificar', { 
-        method: 'POST', 
-        headers: {'Content-Type':'application/json'}, 
-        body: JSON.stringify({imagem:b64}) 
-    })
-    .then(r => {
-        if (!r.ok) throw new Error("Erro no servidor");
-        return r.json();
-    })
+    fetch('/identificar', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({imagem:b64}) })
+    .then(r => { if (!r.ok) throw new Error("Erro no servidor"); return r.json(); })
     .then(d => {
-        // Se tudo deu certo
         spinner.style.display = 'none';
         if (d.sucesso) {
             atualizarHUD(d, spy);
             addToHistory((spy ? "👁️ " : "") + d.dados.nome, d.imagem);
             tocarSom('scan');
-            if (!spy && salaAtual !== "" && !isSpectator) {
-                socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados });
-            }
-        } else {
-            resultText.innerText = "Falha";
-            resultText.style.color = "#555";
-        }
+            if (!spy && salaAtual !== "" && !isSpectator) socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados });
+        } else { resultText.innerText = "Falha"; resultText.style.color = "#555"; }
     })
-    .catch(err => {
-        // SE DER ERRO CRÍTICO, DESTRAVA A TELA
-        console.error("Erro no scan:", err);
-        spinner.style.display = 'none';
-        resultText.innerText = "Erro Servidor";
-        resultText.style.color = "red";
-    });
+    .catch(err => { console.error("Erro no scan:", err); spinner.style.display = 'none'; resultText.innerText = "Erro Servidor"; resultText.style.color = "red"; });
 }
 
 function uiCarregando() { resultText.innerText="Analisando..."; resultText.style.color="var(--ether-blue)"; resultImg.style.display="none"; spinner.style.display='block'; }
-function atualizarHUD(d, spy) {
-    resultText.innerText = (spy?"[ESPIÃO] ":"") + d.dados.nome; resultText.style.color = spy?"#ff00ff":"var(--accent-gold)";
-    resultImg.src="data:image/jpeg;base64,"+d.imagem; resultImg.style.display='block';
-}
+function atualizarHUD(d, spy) { resultText.innerText = (spy?"[ESPIÃO] ":"") + d.dados.nome; resultText.style.color = spy?"#ff00ff":"var(--accent-gold)"; resultImg.src="data:image/jpeg;base64,"+d.imagem; resultImg.style.display='block'; }
 function addToHistory(n, b64) {
     const list = document.getElementById('history-list');
-    
-    // --- 1. VERIFICAÇÃO DE DUPLICATAS ---
-    // Pega todos os itens atuais
     const existingItems = list.getElementsByClassName('history-item');
-    
-    // O nome que vem do Python pode ter "👁️ " se for espião, vamos limpar para comparar
-    const cleanNameNew = n.replace('👁️ ', '').trim();
-
+    const cleanNew = n.replace('👁️ ', '').trim();
     for (let i = 0; i < existingItems.length; i++) {
         const item = existingItems[i];
-        // Pega o texto do span dentro do item
         const textSpan = item.querySelector('span');
-        if (textSpan) {
-            const cleanNameOld = textSpan.innerText.replace('👁️ ', '').trim();
-            
-            // Se o nome for igual, remove o item antigo da lista
-            if (cleanNameOld === cleanNameNew) {
-                list.removeChild(item);
-                break; // Para o loop, pois já achamos e removemos
-            }
-        }
+        if (textSpan) { const cleanOld = textSpan.innerText.replace('👁️ ', '').trim(); if (cleanOld === cleanNew) { list.removeChild(item); break; } }
     }
-
-    // --- 2. CRIA O NOVO ITEM ---
-    const item = document.createElement('div');
-    item.className = 'history-item';
+    const item = document.createElement('div'); item.className = 'history-item';
     item.innerHTML = `<img src="data:image/jpeg;base64,${b64}"><span>${n}</span>`;
-    
-    item.onclick = () => { 
-        resultImg.src = "data:image/jpeg;base64," + b64; 
-        resultImg.style.display = 'block'; 
-        // Remove prefixos visuais ao clicar para ver detalhes
-        resultText.innerText = n.replace(/\[.*?\] /,'').replace('👁️ ',''); 
-    };
-
-    // --- 3. ADICIONA NO TOPO ---
-    list.prepend(item); 
-    
-    // Limite de segurança (ex: mantém apenas as últimas 30 cartas únicas)
+    item.onclick = () => { resultImg.src = "data:image/jpeg;base64," + b64; resultImg.style.display = 'block'; resultText.innerText = n.replace(/\[.*?\] /,'').replace('👁️ ',''); };
+    list.prepend(item);
     if (list.children.length > 30) list.lastChild.remove();
-}
-
-async function start() {
-    // start() agora é chamado dentro de conectarSala() -> socket.on('configurar_papel')
 }
