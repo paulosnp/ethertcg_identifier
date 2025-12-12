@@ -50,7 +50,7 @@ def ler_imagem_com_acentos(caminho):
 if not os.path.exists(PASTA_BANCO):
     os.makedirs(PASTA_BANCO)
 
-orb = cv2.ORB_create(nfeatures=3000)
+orb = cv2.ORB_create(nfeatures=1000)
 # CLAHE melhora o contraste para identificar cartas foil/escuras
 clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
 
@@ -99,9 +99,22 @@ else:
 def recorte_inteligente(img):
     try:
         h_img, w_img = img.shape[:2]
-        centro_x, centro_y = w_img // 2, h_img // 2 
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # Otimização: Redimensionar para processar contornos mais rápido
+        scale = 1.0
+        max_dim = 800
+        if w_img > max_dim or h_img > max_dim:
+            scale = max_dim / max(w_img, h_img)
+            width = int(w_img * scale)
+            height = int(h_img * scale)
+            img_resized = cv2.resize(img, (width, height))
+        else:
+            img_resized = img
+
+        h_small, w_small = img_resized.shape[:2]
+        centro_x, centro_y = w_small // 2, h_small // 2
+
+        gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
         edges = cv2.Canny(blur, 30, 150)
         
@@ -119,7 +132,7 @@ def recorte_inteligente(img):
 
         for c in contours:
             area = cv2.contourArea(c)
-            if area < (h_img * w_img * 0.05): continue
+            if area < (h_small * w_small * 0.05): continue
 
             # Verifica se o clique (centro) está dentro do contorno
             if cv2.pointPolygonTest(c, (centro_x, centro_y), False) >= 0:
@@ -131,6 +144,13 @@ def recorte_inteligente(img):
              melhor_candidato = max(contours, key=cv2.contourArea)
 
         x, y, w, h = cv2.boundingRect(melhor_candidato)
+
+        # Mapeia coordenadas de volta para o tamanho original
+        x = int(x / scale)
+        y = int(y / scale)
+        w = int(w / scale)
+        h = int(h / scale)
+
         pad = 15
         x = max(0, x - pad); y = max(0, y - pad)
         w = min(w_img - x, w + 2*pad); h = min(h_img - y, h + 2*pad)
