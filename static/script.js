@@ -65,7 +65,9 @@ const statusText = getEl('status-text');
 // 2. ESTADO
 // ======================================================
 const CROP_W = 400; const CROP_H = 600; 
-const socket = io();
+const socket = io(undefined, { reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: 5 });
+socket.on('connect_error', (error) => { console.error('Erro de conexão Socket.IO:', error); });
+socket.on('disconnect', (reason) => { console.warn('Desconectado do Socket.IO:', reason); });
 let peer = null;
 let myPeerId = null;
 let salaAtual = "";
@@ -275,23 +277,30 @@ socket.on('log_vida', (data) => {
 });
 
 function iniciarPeer(myStream) {
-    peer = new Peer(undefined, { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
-    peer.on('open', (id) => { myPeerId = id; socket.emit('aviso_peer_id', { sala: salaAtual, peerId: myPeerId, role: (isSpectator ? 'spec' : 'player') }); });
-    peer.on('call', (call) => {
-        let streamToSend = myStream;
-        if (!isSpectator && !shareAudioWithSpecs && call.metadata?.role === 'spec') {
-             const vt = myStream.getVideoTracks(); if (vt.length > 0) streamToSend = new MediaStream([vt[0]]);
-        }
-        if(!isSpectator || !streamToSend) call.answer(streamToSend); else call.answer();
-        call.on('stream', (rs) => isSpectator ? handleSpectatorStream(rs) : mostrarVideoOponente(rs));
-    });
+    try {
+        peer = new Peer(undefined, { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
+        peer.on('open', (id) => { myPeerId = id; socket.emit('aviso_peer_id', { sala: salaAtual, peerId: myPeerId, role: (isSpectator ? 'spec' : 'player') }); });
+        peer.on('error', (err) => { console.error('Erro PeerJS:', err); });
+        peer.on('call', (call) => {
+            let streamToSend = myStream;
+            if (!isSpectator && !shareAudioWithSpecs && call.metadata?.role === 'spec') {
+                 const vt = myStream?.getVideoTracks?.(); if (vt && vt.length > 0) streamToSend = new MediaStream([vt[0]]);
+            }
+            if(myStream) { call.answer(streamToSend); } else { call.answer(); }
+            call.on('stream', (rs) => isSpectator ? handleSpectatorStream(rs) : mostrarVideoOponente(rs));
+            call.on('error', (err) => { console.error('Erro na chamada PeerJS:', err); });
+        });
+    } catch (err) { console.error('Erro ao iniciar PeerJS:', err); }
 }
 socket.on('novo_peer_na_sala', (data) => {
     if (data.peerId === myPeerId) return;
-    if (!isSpectator) {
-        let streamToSend = video.srcObject;
-        if (!shareAudioWithSpecs) { const vt = video.srcObject.getVideoTracks(); if (vt.length > 0) streamToSend = new MediaStream([vt[0]]); }
-        peer.call(data.peerId, streamToSend, { metadata: { role: 'player' } });
+    if (!isSpectator && peer && video.srcObject) {
+        try {
+            let streamToSend = video.srcObject;
+            if (!shareAudioWithSpecs) { const vt = video.srcObject.getVideoTracks(); if (vt.length > 0) streamToSend = new MediaStream([vt[0]]); }
+            const call = peer.call(data.peerId, streamToSend, { metadata: { role: 'player' } });
+            call.on('error', (err) => { console.error('Erro ao chamar peer:', err); });
+        } catch (err) { console.error('Erro em novo_peer_na_sala:', err); }
     }
 });
 function mostrarVideoOponente(stream) { if (remoteVideo) { remoteVideo.srcObject = stream; remoteVideo.muted = false; isLocalMain = false; atualizarLayout(); } }
@@ -318,7 +327,7 @@ socket.on('executar_crop_local', (d) => { const w = video.videoWidth, h = video.
 socket.on('receber_imagem_remota', (d) => enviarParaPython(d.imagem, true));
 socket.on('oponente_jogou', (d) => addToHistory(`[RIVAL] ${d.nome}`, d.imagem));
 function processarCrop(vid, rx, ry, sx, sy, spy) { let x = (rx*sx) - CROP_W/2, y = (ry*sy) - CROP_H/2; canvas.width=CROP_W; canvas.height=CROP_H; ctx.drawImage(vid, x, y, CROP_W, CROP_H, 0, 0, CROP_W, CROP_H); enviarParaPython(canvas.toDataURL('image/jpeg', 0.9), spy); }
-function enviarParaPython(b64, spy) { fetch('/identificar', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({imagem:b64}) }).then(r => r.json()).then(d => { spinner.style.display = 'none'; if (d.sucesso) { if(resultText) { resultText.innerText = (spy?"[ESPIÃO] ":"") + d.dados.nome; resultText.style.color = "var(--accent-gold)"; } if(resultImg) { resultImg.src="data:image/jpeg;base64,"+d.imagem; resultImg.style.display='block'; } addToHistory(d.dados.nome, d.imagem); tocarSom('scan'); if (!spy && salaAtual !== "" && !isSpectator) socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados }); } }).catch(err => { console.error(err); spinner.style.display = 'none'; }); }
+function enviarParaPython(b64, spy) { fetch('/identificar', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({imagem:b64}), timeout: 15000 }).then(r => r.json()).then(d => { spinner.style.display = 'none'; if (d.sucesso) { if(resultText) { resultText.innerText = (spy?"[ESPIÃO] ":"") + d.dados.nome; resultText.style.color = "var(--accent-gold)"; } if(resultImg) { resultImg.src="data:image/jpeg;base64,"+d.imagem; resultImg.style.display='block'; } addToHistory(d.dados.nome, d.imagem); tocarSom('scan'); if (!spy && salaAtual !== "" && !isSpectator) socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados }); } else { if(resultText) { resultText.innerText = "Carta não identificada"; resultText.style.color = "#ff6666"; } } }).catch(err => { console.error('Erro ao enviar para Python:', err); spinner.style.display = 'none'; if(resultText) { resultText.innerText = "Erro na requisição"; resultText.style.color = "#ff6666"; } }); }
 function uiCarregando() { resultText.innerText="Analisando..."; resultText.style.color="var(--ether-blue)"; if(resultImg) resultImg.style.display="none"; spinner.style.display='block'; }
 function addToHistory(n, b64) { const list = getEl('history-list'); if(!list) return; const item = document.createElement('div'); item.className = 'history-item'; item.innerHTML = `<img src="data:image/jpeg;base64,${b64}"><span>${n}</span>`; item.onclick = () => { if(resultImg) { resultImg.src = "data:image/jpeg;base64," + b64; resultImg.style.display = 'block'; } }; list.prepend(item); }
 function tocarSom(tipo) { if (!isSoundOn) return; try { let audio = null; if (tipo === 'msg') audio = sndMsg; else if (tipo === 'life') audio = sndLife; else if (tipo === 'scan') audio = sndScan; if (audio) { audio.currentTime = 0; audio.play().catch(e => {}); } } catch (e) {} }

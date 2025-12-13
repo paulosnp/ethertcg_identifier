@@ -1,5 +1,9 @@
 import eventlet
+import logging
 eventlet.monkey_patch()
+
+# Configuração de Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, join_room, leave_room, emit
 import os
@@ -10,8 +14,8 @@ import json
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'segredo_ether_tcg_master'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'segredo_ether_tcg_master_fallback')
+socketio = SocketIO(app, cors_allowed_origins=os.environ.get('CORS_ORIGINS', '*'), async_mode='eventlet')
 
 # --- CONFIGURAÇÃO DO LOBBY VISUAL ---
 LOBBY_ROOMS = {}
@@ -38,13 +42,13 @@ METADADOS = {}
 if os.path.exists(ARQUIVO_DADOS):
     try:
         with open(ARQUIVO_DADOS, 'r', encoding='utf-8') as f: METADADOS = json.load(f)
-    except: pass
+    except Exception as e: logging.error("Erro ao carregar cartas.json: %s", e)
 
 def ler_imagem_com_acentos(caminho):
     try:
         stream = np.fromfile(caminho, dtype=np.uint8)
         return cv2.imdecode(stream, cv2.IMREAD_COLOR)
-    except: return None
+    except Exception as e: logging.error("Erro ao ler imagem: %s", e); return None
 
 # --- INDEXAÇÃO OTIMIZADA ---
 if not os.path.exists(PASTA_BANCO): os.makedirs(PASTA_BANCO)
@@ -58,7 +62,7 @@ imagens_b64 = []
 descritores_db = []
 dados_para_homografia = []
 
-print("--- INICIANDO INDEXAÇÃO ---")
+logging.info("--- INICIANDO INDEXAÇÃO ---")
 for arquivo in os.listdir(PASTA_BANCO):
     caminho = os.path.join(PASTA_BANCO, arquivo)
     img = ler_imagem_com_acentos(caminho)
@@ -84,7 +88,7 @@ for arquivo in os.listdir(PASTA_BANCO):
 index_params = dict(algorithm=6, table_number=6, key_size=12, multi_probe_level=1)
 search_params = dict(checks=70)
 flann = cv2.FlannBasedMatcher(index_params, search_params)
-if len(descritores_db) > 0: flann.add(descritores_db); flann.train(); print(f"Sucesso: {len(descritores_db)} cartas otimizadas.")
+if len(descritores_db) > 0: flann.add(descritores_db); flann.train(); logging.info(f"Sucesso: {len(descritores_db)} cartas otimizadas.")
 
 def recorte_inteligente(img):
     try:
@@ -110,7 +114,7 @@ def recorte_inteligente(img):
         x = max(0, x - pad); y = max(0, y - pad)
         w = min(w_img - x, w + 2*pad); h = min(h_img - y, h + 2*pad)
         return img[y:y+h, x:x+w]
-    except: return img
+    except Exception as e: logging.warning("Erro no recorte inteligente: %s", e); return img
 
 # --- SOCKETS ---
 
@@ -252,7 +256,7 @@ def identificar():
                 return jsonify({'sucesso': True, 'imagem': imagens_b64[vencedor], 'dados': info})
         return jsonify({'sucesso': False})
     except Exception as e:
-        print("Erro no servidor:", e)
+        logging.error("Erro no servidor: %s", e)
         return jsonify({'sucesso': False})
 
 if __name__ == '__main__':
