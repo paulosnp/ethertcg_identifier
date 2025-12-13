@@ -28,13 +28,11 @@
     </div>
 
     <button id="sidebarToggle" title="Menu" class="closed" style="display: none;">&gt;</button>
-
     <aside class="sidebar closed" id="mainSidebar">
         <div class="sidebar-brand">
             <img src="{{ url_for('static', filename='ether-icon.png') }}" alt="">
             <span>REGISTROS</span>
         </div>
-
         <div class="st-section-title">ÚLTIMA CARTA</div>
         <div id="st-last-card-container" onclick="expandCard()">
             <div id="st-loading" class="spinner-st"></div>
@@ -45,10 +43,8 @@
                 <span class="material-icons-round st-more-icon">info</span>
             </div>
         </div>
-
         <div class="st-section-title" style="margin-top: 25px;">HISTÓRICO</div>
         <div id="st-history-list"></div>
-
         <div id="status-overlay" style="display: none; margin-top: auto;">
             <span class="status-dot"></span>
             <span id="status-text">Conectado</span>
@@ -56,7 +52,6 @@
     </aside>
 
     <main class="main-content">
-
         <div id="lobby-view">
             <div class="logo-area">
                 <img src="{{ url_for('static', filename='logo-ether.svg') }}" alt="ETHER Logo" class="main-logo">
@@ -70,30 +65,24 @@
 
         <div id="game-view"
             style="display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center;">
-
             <div id="container">
                 <div class="video-wrapper local video-full" id="wrapper-local">
                     <video id="videoInput" autoplay playsinline muted></video>
                     <canvas id="canvasHidden" style="display:none;"></canvas>
-
                     <div class="player-hud local-hud">
                         <div class="hud-life-section">
                             <button class="hud-btn" onclick="changeLife('me', -1)">-</button>
                             <span id="hp-me" class="hud-value">20</span>
                             <button class="hud-btn" onclick="changeLife('me', 1)">+</button>
                         </div>
-
                         <div class="hud-separator"></div>
-
                         <div class="hud-name-section">
                             <span class="hud-name" id="name-me">VOCÊ</span>
                         </div>
                     </div>
                 </div>
-
                 <div id="remote-wrapper" class="video-wrapper remote" style="display: none;">
                     <video id="remoteVideo" autoplay playsinline></video>
-
                     <div class="player-hud opponent-hud" id="hud-remote-container" style="display: none;">
                         <div class="hud-life-section">
                             <button class="hud-btn" onclick="changeLife('op', -1)">-</button>
@@ -102,27 +91,27 @@
                         </div>
                         <div class="hud-separator"></div>
                         <div class="hud-name-section">
-                            <span class="hud-name" id="name-op">OPONENTE</span>
+                            <span class="hud-name" id="name-op">AGUARDANDO...</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <nav class="bottom-dock">
-                <button class="dock-btn" onclick="toggleMute(event)" title="Mutar">
+                <button class="dock-btn" onclick="toggleMute(event)" title="Mutar Microfone">
                     <span class="material-icons-round" id="icon-mic">mic</span>
                 </button>
-                <button class="dock-btn scan-trigger" onclick="toggleSidebarScan()" title="Histórico / Scan">
-                    <span class="material-icons-round">center_focus_strong</span>
-                </button>
-                <button class="dock-btn" onclick="toggleRotation(event, 'local')" title="Girar">
+                <button class="dock-btn" onclick="toggleRotationMain()" title="Girar Câmera">
                     <span class="material-icons-round">flip_camera_ios</span>
+                </button>
+                <button class="dock-btn scan-trigger" onclick="toggleSidebarScan()" title="Escanear / Histórico">
+                    <span class="material-icons-round">center_focus_strong</span>
                 </button>
                 <div class="divider"></div>
                 <button class="dock-btn" onclick="abrirModal('modal-temas')" title="Temas">
                     <span class="material-icons-round">palette</span>
                 </button>
-                <button class="dock-btn" onclick="abrirModal('modal-configs')" title="Config">
+                <button class="dock-btn" onclick="abrirModal('modal-configs')" title="Configurações">
                     <span class="material-icons-round">settings</span>
                 </button>
                 <button class="dock-btn" onclick="toggleSidebarChat()" title="Chat">
@@ -132,9 +121,8 @@
             </nav>
 
             <img src="{{ url_for('static', filename='logo-ether.svg') }}" class="overlay-logo-game">
-            <div id="spectator-counter" class="spec-counter" style="display: none;">
-                👁️ <span id="spec-count-val">0</span>
-            </div>
+            <div id="spectator-counter" class="spec-counter" style="display: none;">👁️ <span
+                    id="spec-count-val">0</span></div>
         </div>
     </main>
 
@@ -142,26 +130,18 @@
         <div class="tabs-header">
             <button class="tab-btn active" onclick="switchTab('chat')">DUELO <span id="badge-chat" class="badge"
                     style="display:none">0</span></button>
-            <button id="btn-tab-spec" class="tab-btn" onclick="switchTab('spec')" style="display: none;">SPECT <span
-                    id="badge-spec" class="badge" style="display:none">0</span></button>
+            <button id="btn-tab-spec" class="tab-btn" onclick="switchTab('spec')" style="display: none;">SPECT</button>
             <button class="tab-btn" onclick="switchTab('logs')">LOGS <span id="badge-logs" class="badge"
                     style="display:none">0</span></button>
         </div>
         <div id="chat-container" class="tab-content active">
             <div id="chat-messages"></div>
-            <div class="chat-input-area" id="input-duel">
-                <input type="text" id="msgInput" placeholder="Chat Duelo..." onkeypress="handleChatKey(event, 'duel')">
-                <button onclick="enviarMensagem('duel')">➤</button>
-            </div>
-            <div id="spectator-blocked-msg" style="display:none;">Chat de Duelo (Privado)</div>
+            <div class="chat-input-area"><input type="text" id="msgInput" onkeypress="handleChatKey(event)"><button
+                    onclick="enviarMensagem()">➤</button></div>
         </div>
         <div id="spec-container" class="tab-content" style="display:none;">
             <div id="spec-messages"></div>
-            <div class="chat-input-area">
-                <input type="text" id="msgSpecInput" placeholder="Chat Plateia..."
-                    onkeypress="handleChatKey(event, 'spec')">
-                <button onclick="enviarMensagem('spec')">➤</button>
-            </div>
+            <div class="chat-input-area"><input type="text" id="msgSpecInput"><button>➤</button></div>
         </div>
         <div id="logs-container" class="tab-content" style="display:none;">
             <div id="log-messages"></div>
@@ -170,45 +150,26 @@
 
     <div id="modal-temas" class="modal-overlay" onclick="fecharModal(event, 'modal-temas')">
         <div class="modal-content settings-modal">
-            <div class="modal-header">ESCOLHA SEU REINO</div>
+            <div class="modal-header">TEMAS</div>
             <div class="themes-grid">
-                <div class="theme-option" onclick="mudarTema('')">Original (Éther)</div>
+                <div class="theme-option" onclick="mudarTema('')">Original</div>
                 <div class="theme-option vampiro" onclick="mudarTema('theme-vampiro')">Vampiros</div>
                 <div class="theme-option goblin" onclick="mudarTema('theme-goblin')">Goblins</div>
-                <div class="theme-option folclore" onclick="mudarTema('theme-folclore')">Folclore</div>
-                <div class="theme-option muskkys" onclick="mudarTema('theme-muskkys')">Muskkys</div>
                 <div class="theme-option oceano" onclick="mudarTema('theme-oceano')">Oceano</div>
                 <div class="theme-option fada" onclick="mudarTema('theme-fada')">Fadas</div>
-                <div class="theme-option ocultos" onclick="mudarTema('theme-ocultos')">Ocultos</div>
             </div>
         </div>
     </div>
-
     <div id="modal-configs" class="modal-overlay" onclick="fecharModal(event, 'modal-configs')">
         <div class="modal-content settings-modal">
             <div class="modal-header">CONFIGURAÇÕES</div>
-            <div class="setting-row">
-                <span>Efeitos Sonoros</span>
-                <label class="switch">
-                    <input type="checkbox" id="chkSound" onchange="toggleSoundSetting()">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-            <div class="setting-row" id="opt-share-audio">
-                <span>Compartilhar Áudio com Espectador</span>
-                <label class="switch">
-                    <input type="checkbox" id="chkShareAudio" onchange="toggleShareAudio()">
-                    <span class="slider round"></span>
-                </label>
-            </div>
+            <div class="setting-row"><span>Efeitos Sonoros</span><label class="switch"><input type="checkbox"
+                        id="chkSound" onchange="toggleSoundSetting()"><span class="slider round"></span></label></div>
         </div>
     </div>
-
-    <div id="card-modal" class="modal-overlay" onclick="closeCardModal()">
-        <span class="close-btn">&times;</span>
-        <div style="position: relative; display: inline-block;">
-            <img id="modal-img" src="" draggable="false" class="protected-img">
-        </div>
+    <div id="card-modal" class="modal-overlay" onclick="closeCardModal()"><span class="close-btn">&times;</span>
+        <div style="position: relative; display: inline-block;"><img id="modal-img" src="" draggable="false"
+                class="protected-img"></div>
     </div>
 
     <audio id="snd-msg" src="{{ url_for('static', filename='sounds/message.mp3') }}"></audio>
@@ -218,7 +179,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-
 </body>
 
 </html>
