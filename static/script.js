@@ -17,12 +17,14 @@ const remoteVideo = getEl('remoteVideo');
 const remoteWrapper = getEl('remote-wrapper');
 const localWrapper = document.querySelector('.video-wrapper.local');
 const dockBadge = getEl('dock-badge');
+
+// ELEMENTOS DA SIDEBAR (Limpos)
 const stLastCardImg = getEl('st-last-card-img');
-const stLastCardName = getEl('st-last-card-name');
-const stLastCardNameBar = getEl('st-last-card-name-bar');
+// Removidos: stLastCardName e stLastCardNameBar
 const stEmptyState = getEl('st-empty-state');
 const stLoading = getEl('st-loading');
 const stHistoryList = getEl('st-history-list');
+
 const msgInput = getEl('msgInput');
 const chatMessages = getEl('chat-messages');
 const logMessages = getEl('log-messages');
@@ -287,9 +289,87 @@ socket.on('executar_crop_local', (d) => { const w = video.videoWidth, h = video.
 socket.on('receber_imagem_remota', (d) => enviarParaPython(d.imagem, true));
 socket.on('oponente_jogou', (d) => addToHistory(`[RIVAL] ${d.nome}`, d.imagem));
 function processarCrop(vid, rx, ry, sx, sy, spy) { let x = (rx * sx) - CROP_W / 2, y = (ry * sy) - CROP_H / 2; canvas.width = CROP_W; canvas.height = CROP_H; ctx.drawImage(vid, x, y, CROP_W, CROP_H, 0, 0, CROP_W, CROP_H); enviarParaPython(canvas.toDataURL('image/jpeg', 0.9), spy); }
-function enviarParaPython(b64, spy) { fetch('/identificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imagem: b64 }), timeout: 15000 }).then(r => r.json()).then(d => { stLoading.style.display = 'none'; if (d.sucesso) { stEmptyState.style.display = 'none'; stLastCardImg.src = "data:image/jpeg;base64," + d.imagem; stLastCardImg.style.display = 'block'; stLastCardName.innerText = (spy ? "[ESPIÃO] " : "") + d.dados.nome; stLastCardNameBar.style.display = 'flex'; addToHistory(d.dados.nome, d.imagem); tocarSom('scan'); if (!spy && salaAtual !== "" && !isSpectator) socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados }); } else { stEmptyState.innerText = "Falha ao identificar."; stEmptyState.style.display = 'flex'; } }).catch(err => { stLoading.style.display = 'none'; stEmptyState.innerText = "Erro na conexão."; }); }
-function uiCarregando() { stEmptyState.style.display = 'none'; stLastCardImg.style.display = 'none'; stLastCardNameBar.style.display = 'none'; stLoading.style.display = 'block'; }
-function addToHistory(n, b64) { if (!stHistoryList) return; const item = document.createElement('div'); item.className = 'st-history-item'; item.innerHTML = `<img class="st-history-thumb" src="data:image/jpeg;base64,${b64}"><div class="st-history-info"><span class="st-history-name">${n}</span></div>`; item.onclick = () => { stLastCardImg.src = "data:image/jpeg;base64," + b64; stLastCardImg.style.display = 'block'; stLastCardName.innerText = n; stLastCardNameBar.style.display = 'flex'; stEmptyState.style.display = 'none'; }; stHistoryList.prepend(item); }
+
+// --- ALTERAÇÃO AQUI: Removemos referências a stLastCardName ---
+function enviarParaPython(b64, spy) {
+    fetch('/identificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imagem: b64 }), timeout: 15000 })
+        .then(r => r.json())
+        .then(d => {
+            stLoading.style.display = 'none';
+            if (d.sucesso) {
+                stEmptyState.style.display = 'none';
+                
+                // Atualiza APENAS a imagem principal
+                stLastCardImg.src = "data:image/jpeg;base64," + d.imagem;
+                stLastCardImg.style.display = 'block';
+                
+                // (REMOVIDO: Atualização da barra de texto)
+
+                addToHistory(d.dados.nome, d.imagem);
+                tocarSom('scan');
+                if (!spy && salaAtual !== "" && !isSpectator) socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados });
+            } else {
+                stEmptyState.innerText = "Falha ao identificar.";
+                stEmptyState.style.display = 'flex';
+            }
+        })
+        .catch(err => {
+            stLoading.style.display = 'none';
+            stEmptyState.innerText = "Erro na conexão.";
+        });
+}
+
+function uiCarregando() {
+    stEmptyState.style.display = 'none';
+    stLastCardImg.style.display = 'none';
+    stLoading.style.display = 'block';
+}
+
+function addToHistory(n, b64) {
+    if (!stHistoryList) return;
+
+    // 1. Verifica se a carta já existe no histórico (busca pelo atributo data-name)
+    // Convertemos a lista de filhos para Array para poder usar o 'find'
+    const itemExistente = Array.from(stHistoryList.children).find(item => item.dataset.cardName === n);
+
+    if (itemExistente) {
+        // CENÁRIO A: Carta já existe
+        // Remove da posição atual e joga pro topo (efeito de "trazer para frente")
+        stHistoryList.prepend(itemExistente);
+        
+        // Atualiza a imagem para a versão mais recente do scan (opcional, mas bom pra garantir)
+        const img = itemExistente.querySelector('img');
+        if (img) img.src = "data:image/jpeg;base64," + b64;
+        
+        // Adiciona uma animação rápida para mostrar que atualizou
+        itemExistente.style.transition = 'none';
+        itemExistente.style.transform = 'scale(1.1)';
+        setTimeout(() => {
+            itemExistente.style.transition = 'transform 0.2s';
+            itemExistente.style.transform = 'scale(1)';
+        }, 100);
+
+        return; // Para por aqui, não cria duplicata
+    }
+
+    // CENÁRIO B: Carta nova
+    const item = document.createElement('div');
+    item.className = 'st-history-item';
+    
+    // IMPORTANTE: Salvamos o nome num atributo invisível para conseguir achar depois
+    item.dataset.cardName = n; 
+    
+    item.innerHTML = `<img class="st-history-thumb" src="data:image/jpeg;base64,${b64}" title="${n}">`;
+    
+    item.onclick = () => {
+        stLastCardImg.src = "data:image/jpeg;base64," + b64;
+        stLastCardImg.style.display = 'block';
+        stEmptyState.style.display = 'none';
+    };
+    
+    stHistoryList.prepend(item);
+}
+
 function tocarSom(tipo) { if (!isSoundOn) return; try { let audio = null; if (tipo === 'msg') audio = sndMsg; else if (tipo === 'life') audio = sndLife; else if (tipo === 'scan') audio = sndScan; if (audio) { audio.currentTime = 0; audio.play().catch(e => { }); } } catch (e) { } }
 window.toggleSoundSetting = function () { isSoundOn = document.getElementById('chkSound').checked; };
 window.toggleShareAudio = function () { shareAudioWithSpecs = document.getElementById('chkShareAudio').checked; };
