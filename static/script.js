@@ -42,6 +42,8 @@ const sndLife = getEl('snd-life');
 const sndScan = getEl('snd-scan');
 const canvas = getEl('canvasHidden');
 let ctx = null; if (canvas) { ctx = canvas.getContext('2d'); }
+const CROP_W = 400;
+const CROP_H = 600;
 
 // STATE
 const socket = io({ reconnection: true, reconnectionDelay: 500 });

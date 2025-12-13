@@ -425,6 +425,7 @@ def identificar():
         
         # Validação mínima
         if votos[vencedor] < 4:
+            
             return jsonify({'sucesso': False})
             
         # Homografia para confirmar geometria
@@ -438,6 +439,7 @@ def identificar():
             if mask is not None:
                 matchesMask = mask.ravel().tolist()
                 inliers = matchesMask.count(1)
+                
                 
                 if inliers >= 5:
                     arq = nomes_cartas[vencedor]
