@@ -94,26 +94,57 @@
             </div>
 
             <nav class="bottom-dock">
-                <button class="dock-btn" onclick="toggleMute(event)" title="Mutar Microfone">
-                    <span class="material-icons-round" id="icon-mic">mic</span>
-                </button>
-                <button class="dock-btn" onclick="toggleRotationMain()" title="Girar Câmera">
-                    <span class="material-icons-round">flip_camera_ios</span>
-                </button>
-                <button class="dock-btn scan-trigger" onclick="toggleSidebarScan()" title="Escanear / Histórico">
-                    <span class="material-icons-round">center_focus_strong</span>
-                </button>
-                <div class="divider"></div>
-                <button class="dock-btn" onclick="abrirModal('modal-temas')" title="Temas">
-                    <span class="material-icons-round">palette</span>
-                </button>
-                <button class="dock-btn" onclick="abrirModal('modal-configs')" title="Configurações">
-                    <span class="material-icons-round">settings</span>
-                </button>
-                <button class="dock-btn" onclick="toggleSidebarChat()" title="Chat">
-                    <span class="material-icons-round">chat</span>
-                    <span id="dock-badge" class="dock-badge" style="display:none">0</span>
-                </button>
+                <div class="dock-player" style="display: flex; gap: 15px; align-items: center;">
+                    <button class="dock-btn" onclick="toggleMute(event)" title="Mutar Microfone">
+                        <span class="material-icons-round">mic</span>
+                    </button>
+                    <button class="dock-btn" onclick="toggleRotationMain()" title="Girar Câmera">
+                        <span class="material-icons-round">flip_camera_ios</span>
+                    </button>
+                    <button class="dock-btn scan-trigger" onclick="toggleSidebarScan()" title="Escanear">
+                        <span class="material-icons-round">center_focus_strong</span>
+                    </button>
+                    <div class="divider"></div>
+                    <button class="dock-btn" onclick="abrirModal('modal-temas')"><span class="material-icons-round">palette</span></button>
+                    <button class="dock-btn" onclick="abrirModal('modal-configs')"><span class="material-icons-round">settings</span></button>
+                    <button class="dock-btn" onclick="toggleSidebarChat()">
+                        <span class="material-icons-round">chat</span>
+                        <span id="dock-badge" class="dock-badge" style="display:none">0</span>
+                    </button>
+                </div>
+
+                <div class="dock-spec" style="display: none; gap: 10px; align-items: center;">
+                    <div class="dock-group">
+                        <button class="dock-btn" onclick="toggleMuteSpec('p1', this)" title="Mutar P1">
+                            <span class="material-icons-round">volume_up</span>
+                            <span style="font-size:0.6rem; position:absolute; top:2px; right:2px;">P1</span>
+                        </button>
+                        <button class="dock-btn" onclick="rotateSpec('p1')" title="Girar P1">
+                            <span class="material-icons-round">screen_rotation</span>
+                        </button>
+                    </div>
+
+                    <div class="dock-group">
+                        <button class="dock-btn" onclick="toggleMuteSpec('p2', this)" title="Mutar P2">
+                            <span class="material-icons-round">volume_up</span>
+                            <span style="font-size:0.6rem; position:absolute; top:2px; right:2px;">P2</span>
+                        </button>
+                        <button class="dock-btn" onclick="rotateSpec('p2')" title="Girar P2">
+                            <span class="material-icons-round">screen_rotation</span>
+                        </button>
+                    </div>
+
+                    <div class="dock-group">
+                        <button class="dock-btn scan-trigger" onclick="toggleSidebarScan()" title="Escanear">
+                            <span class="material-icons-round">center_focus_strong</span>
+                        </button>
+                        <button class="dock-btn" onclick="abrirModal('modal-temas')"><span class="material-icons-round">palette</span></button>
+                        <button class="dock-btn" onclick="toggleSidebarChat()">
+                            <span class="material-icons-round">chat</span>
+                            <span id="dock-badge-spec" class="dock-badge" style="display:none">0</span>
+                        </button>
+                    </div>
+                </div>
             </nav>
 
             <img src="{{ url_for('static', filename='logo-ether.svg') }}" class="overlay-logo-game">
