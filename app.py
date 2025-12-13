@@ -19,10 +19,10 @@ for i in range(1, 11):
     room_id = f"mesa_{i}"
     LOBBY_ROOMS[room_id] = {
         "name": f"Arena {i:02d}",
-        "players": [] # Lista visual de nicks
+        "players": [] 
     }
 
-# --- MAPA DE SESSÕES (SID -> DADOS) ---
+# --- MAPA DE SESSÕES ---
 SID_MAP = {}
 
 # --- ESTADO INTERNO DAS SALAS ---
@@ -46,9 +46,13 @@ def ler_imagem_com_acentos(caminho):
         return cv2.imdecode(stream, cv2.IMREAD_COLOR)
     except: return None
 
+# --- INDEXAÇÃO OTIMIZADA ---
 if not os.path.exists(PASTA_BANCO): os.makedirs(PASTA_BANCO)
-orb = cv2.ORB_create(nfeatures=3000)
+
+# OTIMIZAÇÃO 1: Reduzido nfeatures para 1000 (3x mais rápido)
+orb = cv2.ORB_create(nfeatures=1000)
 clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+
 nomes_cartas = []
 imagens_b64 = []
 descritores_db = []
@@ -59,8 +63,17 @@ for arquivo in os.listdir(PASTA_BANCO):
     caminho = os.path.join(PASTA_BANCO, arquivo)
     img = ler_imagem_com_acentos(caminho)
     if img is None: continue
+    
+    # OTIMIZAÇÃO 2: Reduz imagem do banco se for gigante (max 600px altura)
+    h, w = img.shape[:2]
+    altura_max_banco = 600
+    if h > altura_max_banco:
+        fator = altura_max_banco / h
+        img = cv2.resize(img, (int(w * fator), altura_max_banco), interpolation=cv2.INTER_AREA)
+
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     kp, des = orb.detectAndCompute(clahe.apply(gray), None)
+    
     if des is not None:
         nomes_cartas.append(arquivo)
         _, buffer = cv2.imencode('.jpg', img)
@@ -71,7 +84,7 @@ for arquivo in os.listdir(PASTA_BANCO):
 index_params = dict(algorithm=6, table_number=6, key_size=12, multi_probe_level=1)
 search_params = dict(checks=70)
 flann = cv2.FlannBasedMatcher(index_params, search_params)
-if len(descritores_db) > 0: flann.add(descritores_db); flann.train(); print(f"Sucesso: {len(descritores_db)} cartas.")
+if len(descritores_db) > 0: flann.add(descritores_db); flann.train(); print(f"Sucesso: {len(descritores_db)} cartas otimizadas.")
 
 def recorte_inteligente(img):
     try:
@@ -137,7 +150,6 @@ def handle_join(data):
     if len(SALAS[room]['players']) < 2:
         SALAS[room]['players'].append(sid)
         role = 'player'
-        # Adiciona ao lobby visual
         if room in LOBBY_ROOMS:
             if nickname not in LOBBY_ROOMS[room]['players']:
                 LOBBY_ROOMS[room]['players'].append(nickname)
@@ -145,7 +157,6 @@ def handle_join(data):
             broadcast_room_names(room)
     else:
         SALAS[room]['specs'].append(sid)
-        # Spec também precisa receber os nomes atuais
         broadcast_room_names(room)
     
     SID_MAP[sid] = {'sala': room, 'nick': nickname, 'tipo': role}
@@ -164,14 +175,12 @@ def handle_disconnect():
         nick = user_data['nick']
         role = user_data['tipo']
         
-        # Remove do Lobby Visual se for player
         if role == 'player' and room in LOBBY_ROOMS:
             if nick in LOBBY_ROOMS[room]['players']:
                 LOBBY_ROOMS[room]['players'].remove(nick)
             update_lobby()
             broadcast_room_names(room)
 
-        # Remove da Lógica Interna
         if room in SALAS:
             if sid in SALAS[room]['players']: SALAS[room]['players'].remove(sid)
             elif sid in SALAS[room]['specs']: SALAS[room]['specs'].remove(sid)
@@ -181,12 +190,9 @@ def handle_disconnect():
 
 @socketio.on('enviar_chat')
 def handle_chat(data):
-    # CORREÇÃO: O servidor apenas repassa a mensagem.
-    # O filtro visual é feito no Javascript do cliente.
     room = data['sala']
     emit('receber_chat', data, room=room)
 
-# (OUTROS EVENTOS MANTIDOS)
 @socketio.on('aviso_peer_id')
 def handle_peer_id(data): emit('novo_peer_na_sala', data, room=data['sala'], include_self=False)
 @socketio.on('jogar_carta')
@@ -212,10 +218,18 @@ def identificar():
         np_arr = np.frombuffer(base64.b64decode(dados['imagem'].split(',')[1]), np.uint8)
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         if frame is None: return jsonify({'sucesso': False})
+
+        # OTIMIZAÇÃO 3: Reduzir imagem de entrada se for gigante (max 800px)
+        if frame.shape[0] > 800:
+            fator = 800 / frame.shape[0]
+            frame = cv2.resize(frame, (0,0), fx=fator, fy=fator)
+
         frame_recortado = recorte_inteligente(frame)
         gray = cv2.cvtColor(frame_recortado, cv2.COLOR_BGR2GRAY)
         kp_frame, des_frame = orb.detectAndCompute(clahe.apply(gray), None)
+
         if des_frame is None or len(des_frame) < 5: return jsonify({'sucesso': False})
+
         matches = flann.knnMatch(des_frame, k=2)
         votos = {}
         bons_matches = {}
