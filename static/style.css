@@ -371,6 +371,26 @@ body {
     text-shadow: 0 0 10px rgba(255, 179, 71, 0.5);
 }
 
+.logo-area {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.main-logo {
+    width: 280px; /* Tamanho ideal para o Lobby */
+    max-width: 80%;
+    height: auto;
+    filter: drop-shadow(0 0 15px rgba(255, 179, 71, 0.2)); /* Brilho dourado suave */
+    transition: transform 0.3s ease;
+}
+
+.main-logo:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 20px rgba(255, 179, 71, 0.4));
+}
+
 .lobby-nick-display {
     color: var(--text-muted);
     font-size: 0.9rem;
@@ -983,80 +1003,87 @@ input:checked+.slider:before {
     cursor: pointer;
 }
 
+/* ========================================= */
+/* TEMAS DOS REINOS (ERA MÍSTICA) */
+/* ========================================= */
+
+/* 1. VAMPIROS (Driavelle) - Vermelho Sangue e Gótico */
 body.theme-vampiro {
     --accent-gold: #ff3333;
     --accent-gold-dark: #8a0000;
     --ether-fire: #ff0000;
-    --bg-panel: rgba(20, 0, 0, 0.92);
-    --dock-bg: rgba(30, 5, 5, 0.85);
+    --bg-panel: rgba(20, 5, 5, 0.95);
+    --dock-bg: rgba(30, 0, 0, 0.9);
+    /* Imagem da Matriarca */
     background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('banco_cartas/driavelle-matriarca-wZVwQ-Zn.jpg');
 }
 
+/* 2. GOBLINS (Zogath) - Ouro e Ganância */
 body.theme-goblin {
-    --accent-gold: #ffd700;
+    --accent-gold: #ffd700; /* Ouro puro */
     --accent-gold-dark: #b8860b;
-    --bg-panel: rgba(10, 20, 5, 0.92);
-    --dock-bg: rgba(15, 25, 10, 0.85);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('banco_cartas/krogg.jpg');
+    --bg-panel: rgba(25, 20, 5, 0.95);
+    --dock-bg: rgba(35, 30, 10, 0.9);
+    /* Imagem do Zogath */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9)), url('banco_cartas/zagath_senhor_das_fortunas.jpg');
 }
 
-body.theme-folclore {
-    --accent-gold: #d65db1;
-    --accent-gold-dark: #8e24aa;
-    --bg-panel: rgba(20, 5, 30, 0.92);
-    --dock-bg: rgba(25, 10, 35, 0.85);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('banco_cartas/cuca_senhora_dos_sonhos.jpg');
-}
-
-body.theme-muskkys {
-    --accent-gold: #ff9f43;
-    --accent-gold-dark: #d35400;
-    --bg-panel: rgba(30, 20, 10, 0.92);
-    --dock-bg: rgba(35, 25, 15, 0.85);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('banco_cartas/muskkys_esuriente.jpg');
-}
-
+/* 3. SERES DO OCEANO (Tivia) - Ciano e Profundezas */
 body.theme-oceano {
     --accent-gold: #00e5ff;
     --accent-gold-dark: #008cba;
     --ether-fire: #00bfff;
-    --bg-panel: rgba(0, 15, 25, 0.92);
-    --dock-bg: rgba(0, 20, 30, 0.85);
+    --bg-panel: rgba(0, 15, 25, 0.95);
+    --dock-bg: rgba(0, 20, 30, 0.9);
     --text-main: #d9faff;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9)), url('banco_cartas/tivia.jpg');
+    /* Imagem da Tivia */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.9)), url('banco_cartas/tivia.jpg');
 }
 
-body.theme-ocultos {
-    --accent-gold: #e0e0e0;
-    --accent-gold-dark: #757575;
-    --ether-fire: #ff6600;
-    --bg-panel: rgba(20, 20, 20, 0.92);
-    --dock-bg: rgba(25, 25, 25, 0.85);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('banco_cartas/kaz-Uq-Ef1gE.jpg');
-}
-
+/* 4. FADAS (Vorth) - Luz Divina e Marfim */
 body.theme-fada {
-    --accent-gold: #b8860b;
-    --accent-gold-dark: #8b6508;
-    --bg-panel: rgba(255, 253, 240, 0.92);
-    --dock-bg: rgba(255, 255, 255, 0.85);
-    --text-main: #3d2e1e;
-    --text-muted: #6e5c4b;
-    background-image: linear-gradient(rgba(255, 250, 230, 0.85), rgba(255, 245, 220, 0.95)), url('banco_cartas/vorth.jpg');
+    --accent-gold: #fff59d; /* Amarelo luz */
+    --accent-gold-dark: #fbc02d;
+    --bg-panel: rgba(40, 35, 30, 0.95); /* Fundo escuro quente para contraste */
+    --dock-bg: rgba(50, 45, 40, 0.9);
+    --text-main: #fff;
+    --text-muted: #dcdcdc;
+    /* Imagem da Vorth */
+    background-image: linear-gradient(rgba(20, 10, 0, 0.7), rgba(0, 0, 0, 0.9)), url('banco_cartas/vorth.jpg');
+}
+body.theme-fada .dock-btn { color: #fff59d; } /* Ajuste de ícones para claro */
+
+/* 5. MUSKKYS (Muskkys Esuriente) - Verde Pântano e Roxo */
+body.theme-muskkys {
+    --accent-gold: #b39ddb; /* Roxo suave */
+    --accent-gold-dark: #7e57c2;
+    --ether-fire: #76ff03; /* Verde tóxico */
+    --bg-panel: rgba(20, 30, 20, 0.95);
+    --dock-bg: rgba(25, 35, 25, 0.9);
+    /* Imagem do Muskkys */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9)), url('banco_cartas/muskkys_esuriente.jpg');
 }
 
-body.theme-fada .dock-btn {
-    color: #3d2e1e;
+/* 6. FOLCLORE (Naiá/Cuca) - Rosa Natureza e Verde Floresta */
+body.theme-folclore {
+    --accent-gold: #f48fb1; /* Rosa das flores da Naiá */
+    --accent-gold-dark: #c2185b;
+    --bg-panel: rgba(10, 30, 15, 0.95);
+    --dock-bg: rgba(15, 35, 20, 0.9);
+    /* Imagem da Naiá */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9)), url('banco_cartas/naia.jpg');
 }
 
-body.theme-fada .dock-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-body.theme-fada .msg-op {
-    background: rgba(255, 255, 255, 0.7);
-    color: #333;
-    border-color: #ccc;
+/* 7. OCULTOS (Kaz/Corpo-Seco) - Cinza Osso e Laranja Morto */
+body.theme-ocultos {
+    --accent-gold: #ffcc80; /* Cor de osso envelhecido */
+    --accent-gold-dark: #ef6c00;
+    --ether-fire: #ff9800;
+    --bg-panel: rgba(30, 30, 30, 0.95);
+    --dock-bg: rgba(40, 40, 40, 0.9);
+    --text-main: #e0e0e0;
+    /* Imagem do Kaz */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.95)), url('banco_cartas/kaz-Uq-Ef1gE.jpg');
 }
 
 @media (max-width: 1400px) {

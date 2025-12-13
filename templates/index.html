@@ -150,16 +150,22 @@
 
     <div id="modal-temas" class="modal-overlay" onclick="fecharModal(event, 'modal-temas')">
         <div class="modal-content settings-modal">
-            <div class="modal-header">TEMAS</div>
+            <div class="modal-header">ESCOLHA SEU REINO</div>
             <div class="themes-grid">
-                <div class="theme-option" onclick="mudarTema('')">Original</div>
+                <div class="theme-option" onclick="mudarTema('')" style="border-color: #fff;">Éther</div>
+                
                 <div class="theme-option vampiro" onclick="mudarTema('theme-vampiro')">Vampiros</div>
-                <div class="theme-option goblin" onclick="mudarTema('theme-goblin')">Goblins</div>
                 <div class="theme-option oceano" onclick="mudarTema('theme-oceano')">Oceano</div>
+                <div class="theme-option goblin" onclick="mudarTema('theme-goblin')">Goblins</div>
                 <div class="theme-option fada" onclick="mudarTema('theme-fada')">Fadas</div>
+                
+                <div class="theme-option" onclick="mudarTema('theme-muskkys')" style="color: #b39ddb; border-color: #7e57c2;">Muskkys</div>
+                <div class="theme-option" onclick="mudarTema('theme-folclore')" style="color: #f48fb1; border-color: #c2185b;">Folclore</div>
+                <div class="theme-option" onclick="mudarTema('theme-ocultos')" style="color: #ffcc80; border-color: #ef6c00;">Ocultos</div>
             </div>
         </div>
     </div>
+
     <div id="modal-configs" class="modal-overlay" onclick="fecharModal(event, 'modal-configs')">
         <div class="modal-content settings-modal">
             <div class="modal-header">CONFIGURAÇÕES</div>
