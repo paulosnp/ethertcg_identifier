@@ -491,7 +491,7 @@ function processarCrop(vid, rx, ry, sx, sy, spy) {
     if(x<0)x=0; if(y<0)y=0; if(x+CROP_W > vid.videoWidth) x = vid.videoWidth - CROP_W; if(y+CROP_H > vid.videoHeight) y = vid.videoHeight - CROP_H;
     canvas.width=CROP_W; canvas.height=CROP_H;
     ctx.drawImage(vid, x, y, CROP_W, CROP_H, 0, 0, CROP_W, CROP_H);
-    enviarParaPython(canvas.toDataURL('image/jpeg', 0.9), spy);
+    enviarParaPython(canvas.toDataURL('image/jpeg', 0.6), spy);
 }
 
 function enviarParaPython(b64, spy) {
