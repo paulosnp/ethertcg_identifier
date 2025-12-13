@@ -112,44 +112,9 @@
                         <span id="dock-badge" class="dock-badge" style="display:none">0</span>
                     </button>
                 </div>
-
-                <div class="dock-spec" style="display: none; gap: 10px; align-items: center;">
-                    <div class="dock-group">
-                        <button class="dock-btn" onclick="toggleMuteSpec('p1', this)" title="Mutar P1">
-                            <span class="material-icons-round">volume_up</span>
-                            <span style="font-size:0.6rem; position:absolute; top:2px; right:2px;">P1</span>
-                        </button>
-                        <button class="dock-btn" onclick="rotateSpec('p1')" title="Girar P1">
-                            <span class="material-icons-round">screen_rotation</span>
-                        </button>
-                    </div>
-
-                    <div class="dock-group">
-                        <button class="dock-btn" onclick="toggleMuteSpec('p2', this)" title="Mutar P2">
-                            <span class="material-icons-round">volume_up</span>
-                            <span style="font-size:0.6rem; position:absolute; top:2px; right:2px;">P2</span>
-                        </button>
-                        <button class="dock-btn" onclick="rotateSpec('p2')" title="Girar P2">
-                            <span class="material-icons-round">screen_rotation</span>
-                        </button>
-                    </div>
-
-                    <div class="dock-group">
-                        <button class="dock-btn scan-trigger" onclick="toggleSidebarScan()" title="Escanear">
-                            <span class="material-icons-round">center_focus_strong</span>
-                        </button>
-                        <button class="dock-btn" onclick="abrirModal('modal-temas')"><span class="material-icons-round">palette</span></button>
-                        <button class="dock-btn" onclick="toggleSidebarChat()">
-                            <span class="material-icons-round">chat</span>
-                            <span id="dock-badge-spec" class="dock-badge" style="display:none">0</span>
-                        </button>
-                    </div>
-                </div>
             </nav>
 
             <img src="{{ url_for('static', filename='logo-ether.svg') }}" class="overlay-logo-game">
-            <div id="spectator-counter" class="spec-counter" style="display: none;">👁️ <span
-                    id="spec-count-val">0</span></div>
         </div>
     </main>
 
@@ -157,7 +122,6 @@
         <div class="tabs-header">
             <button class="tab-btn active" onclick="switchTab('chat')">DUELO <span id="badge-chat" class="badge"
                     style="display:none">0</span></button>
-            <button id="btn-tab-spec" class="tab-btn" onclick="switchTab('spec')" style="display: none;">SPECT</button>
             <button class="tab-btn" onclick="switchTab('logs')">LOGS <span id="badge-logs" class="badge"
                     style="display:none">0</span></button>
         </div>
@@ -165,10 +129,6 @@
             <div id="chat-messages"></div>
             <div class="chat-input-area"><input type="text" id="msgInput" onkeypress="handleChatKey(event)"><button
                     onclick="enviarMensagem()">➤</button></div>
-        </div>
-        <div id="spec-container" class="tab-content" style="display:none;">
-            <div id="spec-messages"></div>
-            <div class="chat-input-area"><input type="text" id="msgSpecInput"><button>➤</button></div>
         </div>
         <div id="logs-container" class="tab-content" style="display:none;">
             <div id="log-messages"></div>

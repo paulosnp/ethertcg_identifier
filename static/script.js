@@ -35,9 +35,6 @@ const nameMeDisplay = getEl('name-me');
 const hudRemoteContainer = getEl('hud-remote-container');
 const cardModal = getEl('card-modal');
 const modalImg = getEl('modal-img');
-const btnTabSpec = getEl('btn-tab-spec');
-const spectatorCounter = getEl('spectator-counter');
-const specCountVal = getEl('spec-count-val');
 const sndMsg = getEl('snd-msg');
 const sndLife = getEl('snd-life');
 const sndScan = getEl('snd-scan');
@@ -54,7 +51,6 @@ let myPeerId = null;
 
 let calls = { p1: null, p2: null }; 
 let targetPeerIds = { p1: null, p2: null };
-let clickTimer = null; 
 
 let salaAtual = "";
 let myNickname = "Jogador";
@@ -64,11 +60,10 @@ let isLocalRotated = false;
 let isRemoteRotated = false;
 let activeTab = 'chat';
 let isSoundOn = false;
-let isSpectator = false;
 let localStreamGlobal = null;
 
 // ======================================================
-// 3. BOOT (COM CORREÇÃO DE LOCALHOST)
+// 3. BOOT (CAMERA E PEER)
 // ======================================================
 async function iniciarCameraGlobal() {
     try {
@@ -76,20 +71,17 @@ async function iniciarCameraGlobal() {
         video.srcObject = stream; video.muted = true; localStreamGlobal = stream;
         console.log("Webcam real iniciada.");
     } catch (e) {
-        console.warn("Webcam ocupada ou indisponível. Gerando sinal de teste...");
-        localStreamGlobal = criarStreamFake(); // Fallback para não quebrar o jogo
+        console.warn("Webcam indisponível. Usando fallback...");
+        localStreamGlobal = criarStreamFake();
         video.srcObject = localStreamGlobal;
         video.muted = true;
     }
 }
 
-// Cria um vídeo colorido falso para testes locais
 function criarStreamFake() {
     const canvasFake = document.createElement('canvas');
     canvasFake.width = 640; canvasFake.height = 480;
     const ctxFake = canvasFake.getContext('2d');
-    
-    // Animação simples
     setInterval(() => {
         ctxFake.fillStyle = `hsl(${Date.now() % 360}, 60%, 50%)`;
         ctxFake.fillRect(0, 0, 640, 480);
@@ -97,7 +89,6 @@ function criarStreamFake() {
         ctxFake.font = '40px Arial';
         ctxFake.fillText("SEM CÂMERA", 180, 240);
     }, 100);
-    
     return canvasFake.captureStream(30);
 }
 
@@ -107,13 +98,13 @@ function iniciarPeerAntecipado() {
     peer.on('open', (id) => {
         myPeerId = id;
         if (salaAtual && mySlot) socket.emit('aviso_peer_id', { sala: salaAtual, peerId: myPeerId, role: mySlot });
-        iniciarConnectionLoop(); // Auto-Cura
+        iniciarConnectionLoop();
     });
 
     peer.on('call', (call) => {
         call.answer(localStreamGlobal);
         call.on('stream', (rs) => {
-            if (!isSpectator) mostrarVideoOponente(rs);
+            mostrarVideoOponente(rs);
         });
     });
 }
@@ -141,19 +132,17 @@ if (btnEnterWelcome) btnEnterWelcome.addEventListener('click', () => {
 });
 
 // ======================================================
-// 4. LÓGICA DE CONEXÃO "AUTO-CURA"
+// 4. LÓGICA DE CONEXÃO OTIMIZADA (SEM SPEC)
 // ======================================================
 function iniciarConnectionLoop() {
     setInterval(() => {
         if (!peer || !salaAtual || !mySlot) return;
 
+        // Se sou P1, tento conectar no P2. Se sou P2, no P1.
         if (mySlot === 'p1') verificarConexao('p2', targetPeerIds.p2, remoteVideo);
         else if (mySlot === 'p2') verificarConexao('p1', targetPeerIds.p1, remoteVideo);
-        else if (isSpectator) {
-            verificarConexao('p1', targetPeerIds.p1, video);
-            verificarConexao('p2', targetPeerIds.p2, remoteVideo);
-        }
-    }, 2000);
+        
+    }, 1500);
 }
 
 function verificarConexao(slot, targetId, videoElement) {
@@ -161,14 +150,13 @@ function verificarConexao(slot, targetId, videoElement) {
     const isPlaying = (videoElement.srcObject && !videoElement.paused && videoElement.readyState > 2);
     if (isPlaying) return;
 
-    // Se estiver falhando, reconecta
     if (calls[slot]) { calls[slot].close(); calls[slot] = null; }
     
-    const streamToSend = isSpectator ? undefined : localStreamGlobal;
     try {
-        const call = peer.call(targetId, streamToSend);
+        const call = peer.call(targetId, localStreamGlobal);
         calls[slot] = call;
-        call.on('stream', (rs) => atribuirStream(rs, slot));
+        call.on('stream', (rs) => mostrarVideoOponente(rs));
+        call.on('error', (e) => console.log("Erro Call:", e));
     } catch(e) {}
 }
 
@@ -180,14 +168,30 @@ socket.on('lobby_update', (rooms) => {
     visualGrid.innerHTML = "";
     for (const [id, info] of Object.entries(rooms)) {
         let statusClass = "empty"; let actionText = "ENTRAR";
+        let isFull = false;
+        
         if (info.count === 1) { statusClass = "waiting"; actionText = "DESAFIAR"; }
-        else if (info.count >= 2) { statusClass = "full"; actionText = "ASSISTIR"; }
+        else if (info.count >= 2) { statusClass = "full"; actionText = "LOTADA"; isFull = true; }
+        
         const div = document.createElement('div');
         div.className = `arena-card ${statusClass}`;
-        div.onclick = () => entrarNaMesa(id);
+        
+        // BLOQUEIO DE CLIQUE EM SALA CHEIA
+        if (!isFull) {
+            div.onclick = () => entrarNaMesa(id);
+        } else {
+            div.style.cursor = "not-allowed";
+            div.style.opacity = "0.6";
+        }
+        
         div.innerHTML = `<div class="arena-id">${id.replace('mesa_', '')}</div><div class="arena-header"><span class="arena-name">${info.name}</span></div><div class="arena-players"><div class="player-slot">👤 ${info.nicks[0] || 'Vazio'}</div><div class="player-slot">⚔️ ${info.nicks[1] || 'Vazio'}</div></div><div class="arena-action">${actionText}</div>`;
         visualGrid.appendChild(div);
     }
+});
+
+socket.on('erro_sala_cheia', (data) => {
+    alert(data.msg);
+    location.reload();
 });
 
 window.entrarNaMesa = function (salaId) {
@@ -199,37 +203,27 @@ window.entrarNaMesa = function (salaId) {
 
 socket.on('configurar_papel', (data) => {
     mySlot = data.slot;
-    isSpectator = (mySlot === 'spec');
-    
-    // Limpeza de Estado Visual
-    video.srcObject = (isSpectator) ? null : localStreamGlobal;
-    remoteVideo.srcObject = null;
-    
-    if (isSpectator) setupSpectatorMode(); else setupPlayerMode();
+    setupPlayerMode();
     if (myPeerId) socket.emit('aviso_peer_id', { sala: salaAtual, peerId: myPeerId, role: mySlot });
 });
 
 socket.on('atualizar_estado_jogo', (state) => {
-    if (mySlot === 'p1') {
-        atualizarHUD(hpMeDisplay, nameMeDisplay, state.p1);
-        atualizarHUD(hpOpDisplay, nameOpDisplay, state.p2);
-        hudRemoteContainer.style.display = (state.p2.peer_id) ? 'flex' : 'none';
-        targetPeerIds.p2 = state.p2.peer_id;
-    } else if (mySlot === 'p2') {
-        atualizarHUD(hpMeDisplay, nameMeDisplay, state.p2);
-        atualizarHUD(hpOpDisplay, nameOpDisplay, state.p1);
-        hudRemoteContainer.style.display = (state.p1.peer_id) ? 'flex' : 'none';
-        targetPeerIds.p1 = state.p1.peer_id;
-    } else {
-        atualizarHUD(hpMeDisplay, nameMeDisplay, state.p1);
-        atualizarHUD(hpOpDisplay, nameOpDisplay, state.p2);
-        hudRemoteContainer.style.display = 'flex';
-        targetPeerIds.p1 = state.p1.peer_id;
-        targetPeerIds.p2 = state.p2.peer_id;
-    }
+    // Determina quem é "eu" e quem é "oponente"
+    let myData = (mySlot === 'p1') ? state.p1 : state.p2;
+    let enemyData = (mySlot === 'p1') ? state.p2 : state.p1;
+
+    atualizarHUD(hpMeDisplay, nameMeDisplay, myData);
+    atualizarHUD(hpOpDisplay, nameOpDisplay, enemyData);
     
-    if (!state.p1.peer_id) limparVideo('p1');
-    if (!state.p2.peer_id) limparVideo('p2');
+    // Mostra HUD inimigo se ele tiver PeerID (estiver conectado)
+    hudRemoteContainer.style.display = (enemyData.peer_id) ? 'flex' : 'none';
+    
+    // Atualiza o alvo da conexão P2P
+    if (mySlot === 'p1') targetPeerIds.p2 = state.p2.peer_id;
+    else targetPeerIds.p1 = state.p1.peer_id;
+    
+    // Se o inimigo saiu, limpa o vídeo
+    if (!enemyData.peer_id) remoteVideo.srcObject = null;
 });
 
 function atualizarHUD(elHp, elName, data) {
@@ -237,42 +231,18 @@ function atualizarHUD(elHp, elName, data) {
     if (elName) elName.innerText = (data.nick && data.nick !== 'Vazio') ? data.nick : 'AGUARDANDO...';
 }
 
-function atribuirStream(stream, slot) {
-    if (isSpectator) {
-        if (slot === 'p1') { video.srcObject = stream; video.muted = false; video.play().catch(e=>{}); }
-        else { remoteVideo.srcObject = stream; remoteVideo.muted = false; remoteVideo.play().catch(e=>{}); }
-    } else {
-        if (slot === 'p2' || slot === 'p1') { 
-            remoteVideo.srcObject = stream; remoteVideo.muted = false; remoteVideo.play().catch(e=>{});
-            isLocalMain = false; atualizarLayout(); 
-        }
-    }
-}
-
-function limparVideo(slot) {
-    if (isSpectator) {
-        if (slot === 'p1') video.srcObject = null; else remoteVideo.srcObject = null;
-    } else {
-        if ((mySlot === 'p1' && slot === 'p2') || (mySlot === 'p2' && slot === 'p1')) remoteVideo.srcObject = null;
-    }
-}
-
 function mostrarVideoOponente(stream) {
     remoteVideo.srcObject = stream; remoteVideo.muted = false; remoteVideo.play().catch(e=>{});
-    if (!isSpectator) { isLocalMain = false; atualizarLayout(); }
+    isLocalMain = false; atualizarLayout(); 
 }
 
 // ======================================================
-// 6. MODOS DE TELA E CLIQUES (CORRIGIDO SEM CLONAGEM)
+// 6. INTERFACE E CLIQUES
 // ======================================================
 function setupPlayerMode() {
-    document.body.classList.remove('spectator-mode');
-    if (getEl('opt-share-audio')) getEl('opt-share-audio').style.display = 'flex';
+    video.srcObject = localStreamGlobal;
     
-    // Limpa listeners antigos atribuindo null
-    localWrapper.onclick = null; localWrapper.ondblclick = null;
-    remoteWrapper.onclick = null; remoteWrapper.ondblclick = null;
-
+    // Cliques limpos, sem lógica de spec
     localWrapper.onclick = (e) => {
         if (e.target.closest('.player-hud')) return;
         if (!isLocalMain) toggleLayout();
@@ -284,57 +254,6 @@ function setupPlayerMode() {
         if (isLocalMain) toggleLayout();
         else realizarScanRemoto(e);
     };
-}
-
-function setupSpectatorMode() {
-    if (container) container.classList.add('spectator-view');
-    document.body.classList.add('spectator-mode');
-    if (getEl('opt-share-audio')) getEl('opt-share-audio').style.display = 'none';
-    
-    if (localWrapper) localWrapper.classList.remove('video-full', 'video-pip');
-    if (remoteWrapper) { remoteWrapper.classList.remove('video-full', 'video-pip'); remoteWrapper.style.display = 'block'; }
-    if (btnTabSpec) { btnTabSpec.style.display = 'block'; btnTabSpec.parentElement.style.display = 'flex'; }
-    switchTab('spec');
-    
-    // Configura cliques Spec
-    configurarCliquesSpectator();
-}
-
-function configurarCliquesSpectator() {
-    // Limpa listeners antigos
-    localWrapper.onclick = null; localWrapper.ondblclick = null;
-    remoteWrapper.onclick = null; remoteWrapper.ondblclick = null;
-
-    // ESQUERDA (P1)
-    localWrapper.onclick = (e) => {
-        if (e.target.closest('.player-hud')) return;
-        if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; return; }
-        clickTimer = setTimeout(() => { clickTimer = null; realizarScanGenerico(e, video, 'p1'); }, 250);
-    };
-    localWrapper.ondblclick = () => {
-        if (clickTimer) clearTimeout(clickTimer);
-        focusVideo('local');
-    };
-
-    // DIREITA (P2) - AQUI ESTAVA O ERRO (Usava rW clonado, agora usa direto o elemento)
-    remoteWrapper.onclick = (e) => {
-        if (e.target.closest('.player-hud')) return;
-        if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; return; }
-        clickTimer = setTimeout(() => { clickTimer = null; realizarScanGenerico(e, remoteVideo, 'p2'); }, 250);
-    };
-    remoteWrapper.ondblclick = () => {
-        if (clickTimer) clearTimeout(clickTimer);
-        focusVideo('remote');
-    };
-}
-
-// SCANNER
-function realizarScanGenerico(e, vidElement, slot) {
-    uiCarregando();
-    const r = vidElement.getBoundingClientRect();
-    let nx = (e.clientX - r.left) / r.width; let ny = (e.clientY - r.top) / r.height;
-    if (vidElement.classList.contains('rotated')) { nx = 1.0 - nx; ny = 1.0 - ny; }
-    processarCrop(vidElement, nx, ny, true);
 }
 
 function realizarScanLocal(cx, cy) { 
@@ -361,32 +280,10 @@ function processarCrop(vid, nx, ny, spy) {
     enviarParaPython(canvas.toDataURL('image/jpeg', 0.6), spy); 
 }
 
-// CONTROLES E UTILITÁRIOS
-window.focusVideo = function(target) {
-    if (!isSpectator) return;
-    const wLocal = getEl('wrapper-local');
-    const wRemote = getEl('remote-wrapper');
-    if ((target === 'local' && wLocal.classList.contains('focused')) || (target === 'remote' && wRemote.classList.contains('focused'))) {
-        wLocal.classList.remove('focused', 'dimmed'); wRemote.classList.remove('focused', 'dimmed'); return;
-    }
-    if (target === 'local') { wLocal.classList.add('focused'); wRemote.classList.add('dimmed'); wLocal.classList.remove('dimmed'); wRemote.classList.remove('focused'); } 
-    else { wRemote.classList.add('focused'); wLocal.classList.add('dimmed'); wRemote.classList.remove('dimmed'); wLocal.classList.remove('focused'); }
-};
-
-window.toggleMuteSpec = function(target, btn) {
-    const vid = (target === 'p1') ? video : remoteVideo;
-    vid.muted = !vid.muted;
-    btn.classList.toggle('active', vid.muted);
-    btn.querySelector('.material-icons-round').innerText = vid.muted ? 'volume_off' : 'volume_up';
-};
-
-window.rotateSpec = function(target) {
-    const vid = (target === 'p1') ? video : remoteVideo;
-    vid.classList.toggle('rotated');
-};
-
+// ======================================================
+// 7. UTILITÁRIOS E CHAT
+// ======================================================
 window.changeLife = function (target, amount) {
-    if (isSpectator) return;
     let targetSlot = (target === 'me') ? mySlot : ((mySlot === 'p1') ? 'p2' : 'p1');
     socket.emit('atualizar_vida', { sala: salaAtual, target_slot: targetSlot, delta: amount });
     tocarSom('life');
@@ -407,18 +304,10 @@ window.enviarMensagem = function () {
 };
 
 socket.on('receber_chat', (data) => {
-    if (data.tipo === 'duel' && isSpectator) return;
     const div = document.createElement('div'); div.classList.add('message-bubble');
     if (data.remetente === socket.id) { div.classList.add('msg-me'); div.innerText = data.texto; }
     else { div.classList.add('msg-op'); div.innerText = data.texto; tocarSom('msg'); if (chatSidebar.classList.contains('closed')) { let c = parseInt(dockBadge.innerText || '0') + 1; dockBadge.innerText = c; dockBadge.style.display = 'block'; } }
     chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
-});
-
-socket.on('update_specs_count', (data) => {
-    if (specCountVal) specCountVal.innerText = data.count;
-    if (spectatorCounter) spectatorCounter.style.display = (data.count > 0) ? 'flex' : 'none';
-    const showTab = (data.count > 0 || isSpectator);
-    if (btnTabSpec) btnTabSpec.style.display = showTab ? 'block' : 'none';
 });
 
 window.switchTab = function (tabName) {
@@ -430,9 +319,6 @@ window.switchTab = function (tabName) {
     } else if (tabName === 'logs') {
         document.querySelector('.tab-btn:last-child').classList.add('active'); 
         chatContainer.style.display = 'none'; logsContainer.style.display = 'flex';
-    } else if (tabName === 'spec') {
-        if(btnTabSpec) btnTabSpec.classList.add('active');
-        chatContainer.style.display = 'none'; logsContainer.style.display = 'none';
     }
 };
 
@@ -441,18 +327,16 @@ window.toggleSidebarScan = function () { mainSidebar.classList.toggle('closed');
 if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', toggleSidebarScan);
 
 function atualizarLayout() {
-    if (isSpectator) return;
     if (localWrapper) localWrapper.classList.remove('video-full', 'video-pip');
     if (remoteWrapper) remoteWrapper.classList.remove('video-full', 'video-pip');
     if (isLocalMain) { localWrapper.classList.add('video-full'); if (remoteVideo.srcObject && remoteWrapper) { remoteWrapper.classList.add('video-pip'); remoteWrapper.style.display = 'flex'; } else { remoteWrapper.style.display = 'none'; } }
     else { if (remoteWrapper) { remoteWrapper.classList.add('video-full'); remoteWrapper.style.display = 'flex'; } localWrapper.classList.add('video-pip'); }
 }
-window.toggleLayout = function () { if (isSpectator) return; if (!remoteVideo.srcObject) return; isLocalMain = !isLocalMain; atualizarLayout(); };
-window.mudarTema = function (tema) { document.body.className = isSpectator ? "spectator-mode" : ""; if (tema) document.body.classList.add(tema); localStorage.setItem('ether_tema_preferido', tema); getEl('modal-temas').style.display = 'none'; };
+window.toggleLayout = function () { if (!remoteVideo.srcObject) return; isLocalMain = !isLocalMain; atualizarLayout(); };
+window.mudarTema = function (tema) { document.body.className = ""; if (tema) document.body.classList.add(tema); localStorage.setItem('ether_tema_preferido', tema); getEl('modal-temas').style.display = 'none'; };
 window.abrirModal = function (id) { getEl(id).style.display = 'flex'; };
 window.fecharModal = function (e, id) { if (e.target.id === id) getEl(id).style.display = 'none'; };
 window.toggleMute = function (event) {
-    if (isSpectator) return;
     const stream = localStreamGlobal || video.srcObject;
     if (stream && stream.getAudioTracks().length > 0) {
         const at = stream.getAudioTracks()[0]; at.enabled = !at.enabled;
@@ -463,7 +347,6 @@ window.toggleMute = function (event) {
 window.toggleRotationMain = function () { if (isLocalMain) { isLocalRotated = !isLocalRotated; video.classList.toggle('rotated', isLocalRotated); } else { isRemoteRotated = !isRemoteRotated; remoteVideo.classList.toggle('rotated', isRemoteRotated); } };
 function tocarSom(tipo) { if (!isSoundOn) return; try { let audio = null; if (tipo === 'msg') audio = sndMsg; else if (tipo === 'life') audio = sndLife; else if (tipo === 'scan') audio = sndScan; if (audio) { audio.currentTime = 0; audio.play().catch(e => { }); } } catch (e) { } }
 window.toggleSoundSetting = function () { isSoundOn = document.getElementById('chkSound').checked; };
-window.toggleShareAudio = function () { shareAudioWithSpecs = document.getElementById('chkShareAudio').checked; };
 window.closeCardModal = function () { cardModal.style.display = 'none'; };
 window.expandCard = function () { if (stLastCardImg.src && stLastCardImg.style.display !== 'none') { modalImg.src = stLastCardImg.src; cardModal.style.display = 'flex'; } };
 
@@ -476,7 +359,8 @@ function enviarParaPython(b64, spy) {
             stLastCardImg.style.display = 'block';
             addToHistory(d.dados.nome, d.imagem);
             tocarSom('scan');
-            if (!spy && salaAtual !== "" && !isSpectator) socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados });
+            // Joga carta apenas se não for espiadinha
+            if (!spy && salaAtual !== "") socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados });
         } else { stEmptyState.innerText = "Falha."; stEmptyState.style.display = 'flex'; }
     }).catch(err => { stLoading.style.display = 'none'; stEmptyState.innerText = "Erro."; });
 }

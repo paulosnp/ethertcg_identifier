@@ -26,7 +26,7 @@ for i in range(1, 11):
 SID_MAP = {}
 SALAS = {}
 
-# --- VISÃO COMPUTACIONAL ---
+# --- VISÃO COMPUTACIONAL (MANTIDA IGUAL) ---
 PASTA_BANCO = 'banco_cartas'
 ARQUIVO_DADOS = 'cartas.json'
 METADADOS = {}
@@ -93,13 +93,13 @@ def recorte_inteligente(img):
         return img[y:y+h_c, x:x+w_c]
     except: return img
 
-# --- AUXILIARES ---
+# --- AUXILIARES OTIMIZADOS ---
 def get_sala_state(rid):
     if rid not in SALAS:
         SALAS[rid] = {
             'p1': {'sid': None, 'nick': 'Vazio', 'hp': 20, 'peer_id': None},
-            'p2': {'sid': None, 'nick': 'Vazio', 'hp': 20, 'peer_id': None},
-            'specs': []
+            'p2': {'sid': None, 'nick': 'Vazio', 'hp': 20, 'peer_id': None}
+            # Removido: 'specs': []
         }
     return SALAS[rid]
 
@@ -111,13 +111,14 @@ def update_lobby():
         if st:
             if st['p1']['sid']: nicks.append(st['p1']['nick'])
             if st['p2']['sid']: nicks.append(st['p2']['nick'])
-        else: nicks = r['players']
+        else:
+            nicks = r['players'] # Fallback para o estado inicial
+        
         data[rid] = {"name": r["name"], "count": len(nicks), "nicks": nicks}
     socketio.emit('lobby_update', data)
 
 def broadcast_game_state(rid):
     st = get_sala_state(rid)
-    # Envia null se não tiver peer_id, pro JS saber que tem que desligar o video
     payload = {
         'p1': st['p1'],
         'p2': st['p2']
@@ -130,52 +131,61 @@ def on_connect(): update_lobby()
 
 @socketio.on('entrar_sala')
 def on_join(data):
-    room = data['sala']; nick = data.get('nickname', 'Player'); sid = request.sid
-    join_room(room)
-    st = get_sala_state(room)
-    my_slot = 'spec'
+    room = data['sala']
+    nick = data.get('nickname', 'Player')
+    sid = request.sid
     
+    st = get_sala_state(room)
+    my_slot = None
+    
+    # Lógica de Vagas Restrita (Bouncer)
     if st['p1']['sid'] is None:
-        st['p1'].update({'sid': sid, 'nick': nick}); my_slot = 'p1'
+        my_slot = 'p1'
     elif st['p2']['sid'] is None:
-        st['p2'].update({'sid': sid, 'nick': nick}); my_slot = 'p2'
+        my_slot = 'p2'
     else:
-        if sid not in st['specs']: st['specs'].append(sid)
-        my_slot = 'spec'
+        # SALA CHEIA - REJEITA CONEXÃO
+        emit('erro_sala_cheia', {'msg': 'Sala Cheia!'}, room=sid)
+        return
 
+    join_room(room)
+    st[my_slot].update({'sid': sid, 'nick': nick})
+    
     SID_MAP[sid] = {'sala': room, 'nick': nick, 'slot': my_slot}
     
-    if my_slot != 'spec':
-        if nick not in LOBBY_ROOMS[room]['players']: LOBBY_ROOMS[room]['players'].append(nick)
+    # Atualiza lista do lobby global
+    if nick not in LOBBY_ROOMS[room]['players']:
+        LOBBY_ROOMS[room]['players'].append(nick)
             
     update_lobby()
     emit('configurar_papel', {'slot': my_slot}, room=sid)
     broadcast_game_state(room)
-    emit('update_specs_count', {'count': len(st['specs'])}, room=room)
 
 @socketio.on('disconnect')
 def on_disconnect():
     sid = request.sid
     if sid in SID_MAP:
         user = SID_MAP[sid]
-        room = user['sala']; slot = user['slot']; st = get_sala_state(room)
+        room = user['sala']
+        slot = user['slot']
+        st = get_sala_state(room)
         
+        # Só precisamos limpar slots de jogadores reais
         if slot in ['p1', 'p2']:
-            st[slot].update({'sid': None, 'nick': 'Vazio', 'peer_id': None}) # Limpa PeerID
+            st[slot].update({'sid': None, 'nick': 'Vazio', 'peer_id': None})
             if user['nick'] in LOBBY_ROOMS[room]['players']:
-                LOBBY_ROOMS[room]['players'].remove(user['nick'])
-        elif slot == 'spec':
-            if sid in st['specs']: st['specs'].remove(sid)
+                try: LOBBY_ROOMS[room]['players'].remove(user['nick'])
+                except: pass
             
         del SID_MAP[sid]
         update_lobby()
-        broadcast_game_state(room) # ISSO AVISA O JS PARA LIMPAR O VÍDEO
-        emit('update_specs_count', {'count': len(st['specs'])}, room=room)
+        broadcast_game_state(room)
 
 @socketio.on('aviso_peer_id')
 def on_peer(data):
     room = data['sala']; peer_id = data['peerId']; sid = request.sid
     st = get_sala_state(room)
+    # Validação extra de segurança
     if st['p1']['sid'] == sid: st['p1']['peer_id'] = peer_id
     elif st['p2']['sid'] == sid: st['p2']['peer_id'] = peer_id
     broadcast_game_state(room)
@@ -184,21 +194,29 @@ def on_peer(data):
 def on_life(data):
     room = data['sala']; target = data['target_slot']; delta = data['delta']
     st = get_sala_state(room)
-    st[target]['hp'] = max(0, min(999, st[target]['hp'] + delta))
     
-    try: autor = SID_MAP[request.sid]['nick']
-    except: autor = "?"
-    
-    broadcast_game_state(room)
-    hora = datetime.now().strftime("%H:%M")
-    emit('log_vida', {'texto': f"{autor} > {st[target]['nick']}: {delta} HP", 'hora': hora}, room=room)
+    # Apenas update se o slot alvo existir
+    if target in ['p1', 'p2']:
+        st[target]['hp'] = max(0, min(999, st[target]['hp'] + delta))
+        
+        try: autor = SID_MAP[request.sid]['nick']
+        except: autor = "?"
+        
+        broadcast_game_state(room)
+        hora = datetime.now().strftime("%H:%M")
+        emit('log_vida', {'texto': f"{autor} > {st[target]['nick']}: {delta} HP", 'hora': hora}, room=room)
 
 @socketio.on('enviar_chat')
-def on_chat(data): emit('receber_chat', data, room=data['sala'])
+def on_chat(data): 
+    # Chat simplificado, sem filtro de spec
+    emit('receber_chat', data, room=data['sala'])
+
 @socketio.on('jogar_carta')
 def on_play(data): emit('oponente_jogou', data, room=data['sala'], include_self=False)
+
 @socketio.on('pedido_scan_remoto')
 def on_scan(data): emit('executar_crop_local', data, room=data['sala'], include_self=False)
+
 @socketio.on('devolver_scan_remoto')
 def on_scan_res(data): emit('receber_imagem_remota', data, room=data['destinatario'])
 
@@ -207,6 +225,7 @@ def index(): return render_template('index.html')
 
 @app.route('/identificar', methods=['POST'])
 def identificar():
+    # Lógica de identificação mantida idêntica
     try:
         if len(descritores_db) == 0: return jsonify({'sucesso': False})
         d = request.json
