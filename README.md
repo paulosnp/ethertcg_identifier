@@ -1,8 +1,8 @@
-# 🔮 Ether TCG Scanner & Duel System
+# 🔮 Ether Duel
 
 > **Um sistema de duelo online que conecta o mundo físico ao digital.**
 
-O **Ether TCG Scanner** é uma aplicação web que utiliza Visão Computacional (OpenCV) para identificar cartas de Trading Card Games em tempo real através da webcam. Além de identificar as cartas, o sistema permite criar **salas de duelo multiplayer**, onde jogadores podem se ver via vídeo (P2P), compartilhar jogadas e até "espionar" o campo do oponente clicando na tela.
+O **Ether Duel** é uma aplicação web que utiliza Visão Computacional (OpenCV) para identificar cartas de Trading Card Games em tempo real através da webcam. Além de identificar as cartas, o sistema permite criar **salas de duelo multiplayer**, onde jogadores podem se ver via vídeo (P2P), compartilhar jogadas e até "espionar" o campo do oponente clicando na tela.
 
 ---
 
