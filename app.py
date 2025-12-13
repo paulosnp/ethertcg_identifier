@@ -1,12 +1,13 @@
+import eventlet
+eventlet.monkey_patch()
+from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, join_room, leave_room, emit
+import os
 import cv2
 import numpy as np
-import os
 import base64
 import json
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify
-from flask_socketio import SocketIO, join_room, leave_room, emit
-import eventlet
 
 # Correção para WebSockets
 eventlet.monkey_patch()
