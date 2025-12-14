@@ -27,7 +27,6 @@
         </div>
     </div>
 
-    <button id="sidebarToggle" title="Menu" class="closed" style="display: none;">&gt;</button>
     <aside class="sidebar closed" id="mainSidebar">
         <div class="sidebar-brand">
             <img src="{{ url_for('static', filename='ether-icon.png') }}" alt="">
@@ -35,6 +34,7 @@
         </div>
         <div class="st-section-title">ÚLTIMA CARTA</div>
         <div id="st-last-card-container" onclick="expandCard()">
+            <div id="st-scan-status" style="display: none;">FALHA NA LEITURA</div>
             <div id="st-loading" class="spinner-st"></div>
             <img id="st-last-card-img" src="" alt="Nenhuma carta" style="display: none;">
             <div id="st-empty-state">Clique na tela para escanear.</div>

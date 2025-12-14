@@ -39,6 +39,7 @@ const sndMsg = getEl('snd-msg');
 const sndLife = getEl('snd-life');
 const sndScan = getEl('snd-scan');
 const canvas = getEl('canvasHidden');
+const stScanStatus = getEl('st-scan-status');
 let ctx = null; if (canvas) { ctx = canvas.getContext('2d'); }
 const CROP_W = 400; const CROP_H = 600;
 
@@ -82,13 +83,20 @@ function criarStreamFake() {
     const canvasFake = document.createElement('canvas');
     canvasFake.width = 640; canvasFake.height = 480;
     const ctxFake = canvasFake.getContext('2d');
-    setInterval(() => {
-        ctxFake.fillStyle = `hsl(${Date.now() % 360}, 60%, 50%)`;
-        ctxFake.fillRect(0, 0, 640, 480);
-        ctxFake.fillStyle = 'white';
-        ctxFake.font = '40px Arial';
-        ctxFake.fillText("SEM CÂMERA", 180, 240);
-    }, 100);
+    
+    // Desenha APENAS UMA VEZ (Sem pisca-pisca)
+    ctxFake.fillStyle = '#121212'; // Fundo Escuro Estático
+    ctxFake.fillRect(0, 0, 640, 480);
+    
+    ctxFake.fillStyle = '#333'; // Um detalhe sutil se quiser
+    ctxFake.fillRect(0, 0, 640, 50); // Barra superior
+    
+    ctxFake.fillStyle = 'white';
+    ctxFake.font = 'bold 40px Arial';
+    ctxFake.textAlign = 'center';
+    ctxFake.fillText("SEM CÂMERA", 320, 240);
+    
+    // Retorna o stream a 30fps (mesmo sendo estático)
     return canvasFake.captureStream(30);
 }
 
@@ -323,8 +331,10 @@ window.switchTab = function (tabName) {
 };
 
 window.toggleSidebarChat = function () { chatSidebar.classList.toggle('closed'); if (!chatSidebar.classList.contains('closed') && dockBadge) { dockBadge.style.display = 'none'; dockBadge.innerText = '0'; } };
-window.toggleSidebarScan = function () { mainSidebar.classList.toggle('closed'); if (mainSidebar.classList.contains('closed')) { if (sidebarToggleBtn) { sidebarToggleBtn.classList.add('closed'); sidebarToggleBtn.style.display = 'none'; } } else { if (sidebarToggleBtn) { sidebarToggleBtn.classList.remove('closed'); sidebarToggleBtn.innerHTML = "<"; sidebarToggleBtn.style.display = 'flex'; } } };
-if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', toggleSidebarScan);
+
+window.toggleSidebarScan = function () { 
+    mainSidebar.classList.toggle('closed'); 
+};
 
 function atualizarLayout() {
     if (localWrapper) localWrapper.classList.remove('video-full', 'video-pip');
@@ -351,19 +361,57 @@ window.closeCardModal = function () { cardModal.style.display = 'none'; };
 window.expandCard = function () { if (stLastCardImg.src && stLastCardImg.style.display !== 'none') { modalImg.src = stLastCardImg.src; cardModal.style.display = 'flex'; } };
 
 function enviarParaPython(b64, spy) {
-    fetch('/identificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imagem: b64 }), timeout: 15000 }).then(r => r.json()).then(d => {
+    fetch('/identificar', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ imagem: b64 }), 
+        timeout: 15000 
+    }).then(r => r.json()).then(d => {
         stLoading.style.display = 'none';
+        
         if (d.sucesso) {
+            // SUCESSO
             stEmptyState.style.display = 'none';
+            stScanStatus.style.display = 'none'; // Garante que erro sumiu
+            
             stLastCardImg.src = "data:image/jpeg;base64," + d.imagem;
             stLastCardImg.style.display = 'block';
+            
             addToHistory(d.dados.nome, d.imagem);
             tocarSom('scan');
-            // Joga carta apenas se não for espiadinha
-            if (!spy && salaAtual !== "") socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados });
-        } else { stEmptyState.innerText = "Falha."; stEmptyState.style.display = 'flex'; }
-    }).catch(err => { stLoading.style.display = 'none'; stEmptyState.innerText = "Erro."; });
+            
+            if (!spy && salaAtual !== "") 
+                socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados });
+        
+        } else { 
+            // FALHA (Mantém a imagem antiga e mostra erro em cima)
+            mostrarErroScan();
+        }
+    }).catch(err => { 
+        stLoading.style.display = 'none'; 
+        mostrarErroScan();
+    });
 }
+
+// Função auxiliar para mostrar o erro temporário
+function mostrarErroScan() {
+    // Se não tem imagem nenhuma carregada, mostra o texto padrão no meio
+    if (stLastCardImg.style.display === 'none') {
+        stEmptyState.innerText = "Falha na leitura.";
+        stEmptyState.style.display = 'flex';
+    } else {
+        // Se JÁ tem imagem, mostra o overlay vermelho em cima dela
+        if(stScanStatus) {
+            stScanStatus.style.display = 'block';
+            stScanStatus.innerText = "FALHA NA LEITURA";
+            // Some depois de 2 segundos
+            setTimeout(() => {
+                stScanStatus.style.display = 'none';
+            }, 2000);
+        }
+    }
+}
+
 function addToHistory(n, b64) { if (!stHistoryList) return; const itemExistente = Array.from(stHistoryList.children).find(item => item.dataset.cardName === n); if (itemExistente) { stHistoryList.prepend(itemExistente); const img = itemExistente.querySelector('img'); if (img) img.src = "data:image/jpeg;base64," + b64; itemExistente.style.transition = 'none'; itemExistente.style.transform = 'scale(1.1)'; setTimeout(() => { itemExistente.style.transition = 'transform 0.2s'; itemExistente.style.transform = 'scale(1)'; }, 100); return; } const item = document.createElement('div'); item.className = 'st-history-item'; item.dataset.cardName = n; item.innerHTML = `<img class="st-history-thumb" src="data:image/jpeg;base64,${b64}" title="${n}">`; item.onclick = () => { stLastCardImg.src = "data:image/jpeg;base64," + b64; stLastCardImg.style.display = 'block'; stEmptyState.style.display = 'none'; }; stHistoryList.prepend(item); }
 function uiCarregando() { stEmptyState.style.display = 'none'; stLastCardImg.style.display = 'none'; stLoading.style.display = 'block'; }
 socket.on('executar_crop_local', (d) => { const w = video.videoWidth, h = video.videoHeight; let rx = d.x * w, ry = d.y * h; let x = rx - CROP_W / 2, y = ry - CROP_H / 2; canvas.width = CROP_W; canvas.height = CROP_H; ctx.drawImage(video, x, y, CROP_W, CROP_H, 0, 0, CROP_W, CROP_H); socket.emit('devolver_scan_remoto', { destinatario: d.solicitante, imagem: canvas.toDataURL('image/jpeg', 0.6) }); });

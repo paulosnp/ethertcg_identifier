@@ -1,4 +1,6 @@
 import eventlet
+from dotenv import load_dotenv
+load_dotenv()
 import logging
 eventlet.monkey_patch()
 
@@ -14,7 +16,7 @@ import json
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'segredo_ether_tcg_master'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback_secret_key_para_dev')
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # --- DADOS GLOBAIS ---
@@ -34,7 +36,7 @@ METADADOS = {}
 if os.path.exists(ARQUIVO_DADOS):
     try:
         with open(ARQUIVO_DADOS, 'r', encoding='utf-8') as f: METADADOS = json.load(f)
-    except: pass
+    except Exception as e: logging.error(f"Erro: {e}")
 
 if not os.path.exists(PASTA_BANCO): os.makedirs(PASTA_BANCO)
 
@@ -68,7 +70,7 @@ if os.path.exists(PASTA_BANCO):
                 imagens_b64.append(base64.b64encode(buffer).decode('utf-8'))
                 descritores_db.append(des)
                 dados_para_homografia.append(kp)
-        except: pass
+        except Exception as e: logging.error(f"Erro: {e}")
 
 index_params = dict(algorithm=6, table_number=6, key_size=12, multi_probe_level=1)
 search_params = dict(checks=50)
@@ -91,7 +93,7 @@ def recorte_inteligente(img):
         pad = 10
         x=max(0,x-pad); y=max(0,y-pad); w_c=min(w-x,w_c+2*pad); h_c=min(h-y,h_c+2*pad)
         return img[y:y+h_c, x:x+w_c]
-    except: return img
+    except Exception as e: logging.warning(f"Erro no recorte inteligente: {e}"); return img
 
 # --- AUXILIARES OTIMIZADOS ---
 def get_sala_state(rid):
@@ -175,7 +177,7 @@ def on_disconnect():
             st[slot].update({'sid': None, 'nick': 'Vazio', 'peer_id': None})
             if user['nick'] in LOBBY_ROOMS[room]['players']:
                 try: LOBBY_ROOMS[room]['players'].remove(user['nick'])
-                except: pass
+                except Exception as e: logging.error(f"Erro: {e}")
             
         del SID_MAP[sid]
         update_lobby()
@@ -257,7 +259,7 @@ def identificar():
             'imagem': imagens_b64[winner],
             'dados': METADADOS.get(nomes_cartas[winner], {"nome": os.path.splitext(nomes_cartas[winner])[0]})
         })
-    except: return jsonify({'sucesso': False})
+    except Exception as e: logging.error(f"Erro na identificação: {e}"); return jsonify({'sucesso': False})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
