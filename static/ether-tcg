@@ -1,0 +1,89 @@
+server {
+    server_name etherduel.online www.etherduel.online;
+
+    # 1. Servir arquivos estáticos diretamente (CSS, JS, Imagens)
+    # Isso alivia a carga do Flask e garante que os arquivos sejam servidos corretamente.
+    location /static/ {
+        alias /var/www/ether-tcg/static/;
+        expires 30d;
+        access_log off;
+    }
+
+    # 2. Proxy para o PeerJS Server (Corrigido para o erro 404)
+    location /ether/peerjs {
+        proxy_pass http://127.0.0.1:9000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+
+    # 3. Proxy para o servidor Flask (inclui a raiz / e o Socket.IO )
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Configurações SSL (Mantenha as suas configurações do Certbot )
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/etherduel.online/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/etherduel.online/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}server {
+    server_name etherduel.online www.etherduel.online;
+
+    # 1. Servir arquivos estáticos diretamente (CSS, JS, Imagens)
+    # Isso alivia a carga do Flask e garante que os arquivos sejam servidos corretamente.
+    location /static/ {
+        alias /var/www/ether-tcg/static/;
+        expires 30d;
+        access_log off;
+    }
+
+    # 2. Proxy para o PeerJS Server (Corrigido para o erro 404)
+    location /ether/peerjs {
+        proxy_pass http://127.0.0.1:9000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+
+    # 3. Proxy para o servidor Flask (inclui a raiz / e o Socket.IO )
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Configurações SSL (Mantenha as suas configurações do Certbot )
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/etherduel.online/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/etherduel.online/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
