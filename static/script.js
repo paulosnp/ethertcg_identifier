@@ -10,7 +10,6 @@ const currentNickLobby = getEl('current-nick-lobby');
 const lobbyScreen = getEl('lobby-view');
 const gameScreen = getEl('game-view');
 const visualGrid = getEl('visual-tables-grid');
-const sidebarToggleBtn = getEl('sidebarToggle');
 const mainSidebar = getEl('mainSidebar');
 const chatSidebar = getEl('chatSidebar');
 const container = getEl('container');
@@ -23,6 +22,7 @@ const stLastCardImg = getEl('st-last-card-img');
 const stEmptyState = getEl('st-empty-state');
 const stLoading = getEl('st-loading');
 const stHistoryList = getEl('st-history-list');
+const stScanStatus = getEl('st-scan-status'); // Referência nova
 const msgInput = getEl('msgInput');
 const chatMessages = getEl('chat-messages');
 const logMessages = getEl('log-messages');
@@ -39,7 +39,6 @@ const sndMsg = getEl('snd-msg');
 const sndLife = getEl('snd-life');
 const sndScan = getEl('snd-scan');
 const canvas = getEl('canvasHidden');
-const stScanStatus = getEl('st-scan-status');
 let ctx = null; if (canvas) { ctx = canvas.getContext('2d'); }
 const CROP_W = 400; const CROP_H = 600;
 
@@ -84,29 +83,52 @@ function criarStreamFake() {
     canvasFake.width = 640; canvasFake.height = 480;
     const ctxFake = canvasFake.getContext('2d');
     
-    // Desenha APENAS UMA VEZ (Sem pisca-pisca)
-    ctxFake.fillStyle = '#121212'; // Fundo Escuro Estático
+    // Fundo estático (sem piscar)
+    ctxFake.fillStyle = '#121212';
     ctxFake.fillRect(0, 0, 640, 480);
-    
-    ctxFake.fillStyle = '#333'; // Um detalhe sutil se quiser
-    ctxFake.fillRect(0, 0, 640, 50); // Barra superior
-    
+    ctxFake.fillStyle = '#333';
+    ctxFake.fillRect(0, 0, 640, 50);
     ctxFake.fillStyle = 'white';
     ctxFake.font = 'bold 40px Arial';
     ctxFake.textAlign = 'center';
     ctxFake.fillText("SEM CÂMERA", 320, 240);
     
-    // Retorna o stream a 30fps (mesmo sendo estático)
     return canvasFake.captureStream(30);
 }
 
 function iniciarPeerAntecipado() {
-    peer = new Peer(undefined, { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
+    console.log("Iniciando PeerJS via Nginx...");
+    
+    // Detecta se é HTTPS
+    const isSecure = window.location.protocol === 'https:';
+    
+    // Se for HTTPS, usa a porta 443. Se for HTTP, a 80.
+    // O Nginx vai redirecionar internamente para a 9000.
+    const port = isSecure ? 443 : 80;
+
+    peer = new Peer(undefined, {
+        host: window.location.hostname,
+        port: port,
+        path: '/ether', // Caminho configurado no Nginx
+        secure: isSecure,
+        debug: 3,
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        }
+    });
     
     peer.on('open', (id) => {
+        console.log("✅ Conectado ao Servidor Peer Próprio! ID:", id);
         myPeerId = id;
         if (salaAtual && mySlot) socket.emit('aviso_peer_id', { sala: salaAtual, peerId: myPeerId, role: mySlot });
         iniciarConnectionLoop();
+    });
+
+    peer.on('error', (err) => {
+        console.error("❌ Erro fatal no PeerJS:", err);
     });
 
     peer.on('call', (call) => {
@@ -140,7 +162,7 @@ if (btnEnterWelcome) btnEnterWelcome.addEventListener('click', () => {
 });
 
 // ======================================================
-// 4. LÓGICA DE CONEXÃO OTIMIZADA (SEM SPEC)
+// 4. LÓGICA DE CONEXÃO OTIMIZADA E SEGURA
 // ======================================================
 function iniciarConnectionLoop() {
     setInterval(() => {
@@ -155,17 +177,43 @@ function iniciarConnectionLoop() {
 
 function verificarConexao(slot, targetId, videoElement) {
     if (!targetId) return;
+    
+    // SEGURANÇA 1: Espera a câmera ligar
+    if (!localStreamGlobal) {
+        // console.log("Aguardando câmera...");
+        return;
+    }
+    
+    // SEGURANÇA 2: Peer destruído
+    if (peer.destroyed) return;
+
+    // Verifica se já está tocando
     const isPlaying = (videoElement.srcObject && !videoElement.paused && videoElement.readyState > 2);
     if (isPlaying) return;
 
-    if (calls[slot]) { calls[slot].close(); calls[slot] = null; }
+    // Verifica se já existe chamada em andamento
+    if (calls[slot]) return;
     
     try {
+        console.log(`📞 Tentando ligar para ${targetId}...`);
         const call = peer.call(targetId, localStreamGlobal);
+        
+        // SEGURANÇA 3: Falha na criação do objeto call
+        if (!call) {
+            console.warn("⚠️ Call retornou null.");
+            return;
+        }
+
         calls[slot] = call;
+        
         call.on('stream', (rs) => mostrarVideoOponente(rs));
-        call.on('error', (e) => console.log("Erro Call:", e));
-    } catch(e) {}
+        call.on('error', (e) => {
+            console.error("Erro na chamada:", e);
+            calls[slot] = null;
+        });
+        call.on('close', () => { calls[slot] = null; });
+        
+    } catch(e) { console.error("Exceção ao ligar:", e); }
 }
 
 // ======================================================
@@ -250,7 +298,7 @@ function mostrarVideoOponente(stream) {
 function setupPlayerMode() {
     video.srcObject = localStreamGlobal;
     
-    // Cliques limpos, sem lógica de spec
+    // Cliques limpos
     localWrapper.onclick = (e) => {
         if (e.target.closest('.player-hud')) return;
         if (!isLocalMain) toggleLayout();
@@ -332,6 +380,7 @@ window.switchTab = function (tabName) {
 
 window.toggleSidebarChat = function () { chatSidebar.classList.toggle('closed'); if (!chatSidebar.classList.contains('closed') && dockBadge) { dockBadge.style.display = 'none'; dockBadge.innerText = '0'; } };
 
+// Sidebar simples, sem botão externo
 window.toggleSidebarScan = function () { 
     mainSidebar.classList.toggle('closed'); 
 };
@@ -372,7 +421,7 @@ function enviarParaPython(b64, spy) {
         if (d.sucesso) {
             // SUCESSO
             stEmptyState.style.display = 'none';
-            stScanStatus.style.display = 'none'; // Garante que erro sumiu
+            if(stScanStatus) stScanStatus.style.display = 'none';
             
             stLastCardImg.src = "data:image/jpeg;base64," + d.imagem;
             stLastCardImg.style.display = 'block';
@@ -384,7 +433,7 @@ function enviarParaPython(b64, spy) {
                 socket.emit('jogar_carta', { sala: salaAtual, nome: d.dados.nome, imagem: d.imagem, dados: d.dados });
         
         } else { 
-            // FALHA (Mantém a imagem antiga e mostra erro em cima)
+            // FALHA (Mostra overlay)
             mostrarErroScan();
         }
     }).catch(err => { 
@@ -393,21 +442,15 @@ function enviarParaPython(b64, spy) {
     });
 }
 
-// Função auxiliar para mostrar o erro temporário
 function mostrarErroScan() {
-    // Se não tem imagem nenhuma carregada, mostra o texto padrão no meio
     if (stLastCardImg.style.display === 'none') {
         stEmptyState.innerText = "Falha na leitura.";
         stEmptyState.style.display = 'flex';
     } else {
-        // Se JÁ tem imagem, mostra o overlay vermelho em cima dela
         if(stScanStatus) {
             stScanStatus.style.display = 'block';
             stScanStatus.innerText = "FALHA NA LEITURA";
-            // Some depois de 2 segundos
-            setTimeout(() => {
-                stScanStatus.style.display = 'none';
-            }, 2000);
+            setTimeout(() => { stScanStatus.style.display = 'none'; }, 2000);
         }
     }
 }
